@@ -1,7 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import CategoryFormDialog from './CategoryFormDialog';
 import ConfirmationDialog from '@/components/ui/confirmation-dialog';
 import SubTabs from './SubTabs';
@@ -17,10 +20,13 @@ interface Category {
 }
 
 const CategoryManager: React.FC = () => {
+  const { cliente } = useAuth();
+  const { toast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState('analisar');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'income' | 'expense'>('income');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [confirmationDialog, setConfirmationDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -33,17 +39,8 @@ const CategoryManager: React.FC = () => {
     onConfirm: () => {}
   });
 
-  const [incomeCategories, setIncomeCategories] = useState<Category[]>([
-    { id: 1, name: 'Freelancer', active: true, color: '#22c55e', description: 'Trabalhos freelance' },
-    { id: 2, name: 'Salário', active: true, color: '#16a34a', description: 'Salário principal' },
-    { id: 3, name: 'Investimentos', active: false, color: '#15803d', description: 'Rendimentos de investimentos' },
-  ]);
-
-  const [expenseCategories, setExpenseCategories] = useState<Category[]>([
-    { id: 1, name: 'Aluguel', active: true, color: '#ef4444', description: 'Aluguel mensal' },
-    { id: 2, name: 'Mercado', active: true, color: '#dc2626', description: 'Compras de supermercado' },
-    { id: 3, name: 'Transporte', active: false, color: '#b91c1c', description: 'Gastos com transporte' },
-  ]);
+  const [incomeCategories, setIncomeCategories] = useState<Category[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
 
   const subTabs = [
     {
@@ -59,6 +56,67 @@ const CategoryManager: React.FC = () => {
       gradient: 'from-orange-500 to-red-500'
     }
   ];
+
+  useEffect(() => {
+    if (cliente) {
+      fetchCategories();
+    }
+  }, [cliente]);
+
+  const fetchCategories = async () => {
+    if (!cliente) return;
+
+    setIsLoading(true);
+    try {
+      // Buscar categorias de entrada
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('financeiro_categorias_entrada')
+        .select('*')
+        .eq('cliente_id', cliente.id)
+        .eq('ativo', true);
+
+      if (incomeError) {
+        console.error('Erro ao buscar categorias de entrada:', incomeError);
+      } else {
+        const mappedIncomeCategories = incomeData?.map(cat => ({
+          id: cat.id,
+          name: cat.nome,
+          active: cat.ativo,
+          color: cat.cor || '#22c55e',
+          description: cat.descricao
+        })) || [];
+        setIncomeCategories(mappedIncomeCategories);
+      }
+
+      // Buscar categorias de saída
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('financeiro_categorias_saida')
+        .select('*')
+        .eq('cliente_id', cliente.id)
+        .eq('ativo', true);
+
+      if (expenseError) {
+        console.error('Erro ao buscar categorias de saída:', expenseError);
+      } else {
+        const mappedExpenseCategories = expenseData?.map(cat => ({
+          id: cat.id,
+          name: cat.nome,
+          active: cat.ativo,
+          color: cat.cor || '#ef4444',
+          description: cat.descricao
+        })) || [];
+        setExpenseCategories(mappedExpenseCategories);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as categorias.",
+        variant: "destructive",
+      });
+    }
+    setIsLoading(false);
+  };
 
   const handleAddCategory = (type: 'income' | 'expense') => {
     setDialogType(type);
@@ -77,57 +135,158 @@ const CategoryManager: React.FC = () => {
       isOpen: true,
       title: 'Confirmar Exclusão',
       description: `Tem certeza que deseja excluir a categoria "${categoryName}"? Esta ação não pode ser desfeita.`,
-      onConfirm: () => {
-        if (type === 'income') {
-          setIncomeCategories(prev => prev.filter(cat => cat.id !== id));
-        } else {
-          setExpenseCategories(prev => prev.filter(cat => cat.id !== id));
+      onConfirm: async () => {
+        try {
+          const table = type === 'income' ? 'financeiro_categorias_entrada' : 'financeiro_categorias_saida';
+          const { error } = await supabase
+            .from(table)
+            .update({ ativo: false })
+            .eq('id', id);
+
+          if (error) throw error;
+
+          // Atualizar estado local
+          if (type === 'income') {
+            setIncomeCategories(prev => prev.filter(cat => cat.id !== id));
+          } else {
+            setExpenseCategories(prev => prev.filter(cat => cat.id !== id));
+          }
+
+          toast({
+            title: "Sucesso",
+            description: "Categoria excluída com sucesso.",
+          });
+        } catch (error) {
+          console.error('Erro ao excluir categoria:', error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível excluir a categoria.",
+            variant: "destructive",
+          });
         }
         setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
       }
     });
   };
 
-  const handleToggleCategory = (id: number, type: 'income' | 'expense') => {
-    if (type === 'income') {
-      setIncomeCategories(prev => prev.map(cat => 
-        cat.id === id ? { ...cat, active: !cat.active } : cat
-      ));
-    } else {
-      setExpenseCategories(prev => prev.map(cat => 
-        cat.id === id ? { ...cat, active: !cat.active } : cat
-      ));
-    }
-  };
+  const handleToggleCategory = async (id: number, type: 'income' | 'expense') => {
+    try {
+      const table = type === 'income' ? 'financeiro_categorias_entrada' : 'financeiro_categorias_saida';
+      const categories = type === 'income' ? incomeCategories : expenseCategories;
+      const category = categories.find(cat => cat.id === id);
+      
+      if (!category) return;
 
-  const handleSaveCategory = (categoryData: any) => {
-    if (editingCategory) {
-      // Editar categoria existente
-      if (dialogType === 'income') {
+      const { error } = await supabase
+        .from(table)
+        .update({ ativo: !category.active })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Atualizar estado local
+      if (type === 'income') {
         setIncomeCategories(prev => prev.map(cat => 
-          cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
+          cat.id === id ? { ...cat, active: !cat.active } : cat
         ));
       } else {
         setExpenseCategories(prev => prev.map(cat => 
-          cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
+          cat.id === id ? { ...cat, active: !cat.active } : cat
         ));
       }
-    } else {
-      // Adicionar nova categoria
-      const newCategory = {
-        id: Date.now(),
-        active: true,
-        ...categoryData
-      };
+    } catch (error) {
+      console.error('Erro ao alterar status da categoria:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível alterar o status da categoria.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveCategory = async (categoryData: any) => {
+    if (!cliente) return;
+
+    try {
+      const table = dialogType === 'income' ? 'financeiro_categorias_entrada' : 'financeiro_categorias_saida';
       
-      if (dialogType === 'income') {
-        setIncomeCategories(prev => [...prev, newCategory]);
+      if (editingCategory) {
+        // Editar categoria existente
+        const { error } = await supabase
+          .from(table)
+          .update({
+            nome: categoryData.name,
+            descricao: categoryData.description,
+            cor: categoryData.color
+          })
+          .eq('id', editingCategory.id);
+
+        if (error) throw error;
+
+        // Atualizar estado local
+        const updatedCategory = { ...editingCategory, ...categoryData };
+        if (dialogType === 'income') {
+          setIncomeCategories(prev => prev.map(cat => 
+            cat.id === editingCategory.id ? updatedCategory : cat
+          ));
+        } else {
+          setExpenseCategories(prev => prev.map(cat => 
+            cat.id === editingCategory.id ? updatedCategory : cat
+          ));
+        }
       } else {
-        setExpenseCategories(prev => [...prev, newCategory]);
+        // Adicionar nova categoria
+        const { data, error } = await supabase
+          .from(table)
+          .insert({
+            cliente_id: cliente.id,
+            nome: categoryData.name,
+            descricao: categoryData.description,
+            cor: categoryData.color,
+            ativo: true
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const newCategory = {
+          id: data.id,
+          name: data.nome,
+          active: data.ativo,
+          color: data.cor,
+          description: data.descricao
+        };
+        
+        if (dialogType === 'income') {
+          setIncomeCategories(prev => [...prev, newCategory]);
+        } else {
+          setExpenseCategories(prev => [...prev, newCategory]);
+        }
       }
+
+      toast({
+        title: "Sucesso",
+        description: editingCategory ? "Categoria atualizada com sucesso." : "Categoria criada com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao salvar categoria:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar a categoria.",
+        variant: "destructive",
+      });
     }
     setIsDialogOpen(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="text-gray-400">Carregando categorias...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

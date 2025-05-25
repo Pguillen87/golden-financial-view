@@ -1,15 +1,25 @@
 
 import React from 'react';
+import { DateRange } from 'react-day-picker';
 import NavigationCard from './NavigationCard';
 
-const NavigationSection: React.FC = () => {
+interface NavigationSectionProps {
+  selectedMonth?: number;
+  selectedYear?: number;
+  dateRange?: DateRange;
+}
+
+const NavigationSection: React.FC<NavigationSectionProps> = ({
+  selectedMonth,
+  selectedYear,
+  dateRange
+}) => {
   return (
-    <div>
-      <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
-        Gestão Financeira
-      </h2>
-      <NavigationCard />
-    </div>
+    <NavigationCard 
+      selectedMonth={selectedMonth}
+      selectedYear={selectedYear}
+      dateRange={dateRange}
+    />
   );
 };
 

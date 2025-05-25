@@ -144,13 +144,13 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              className="border-gray-600 text-white bg-gray-800 hover:bg-gray-700 hover:text-white"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="bg-[#4299e1] hover:bg-[#3182ce] text-white"
+              className="bg-[#FFD700] hover:bg-[#E6C200] text-black font-medium"
             >
               Salvar Meta
             </Button>

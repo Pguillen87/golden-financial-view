@@ -189,7 +189,11 @@ const Dashboard = () => {
           showHiddenCards={showHiddenCards}
         />
 
-        <NavigationSection />
+        <NavigationSection 
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          dateRange={dateRange}
+        />
       </div>
 
       <FloatingActionButtons />

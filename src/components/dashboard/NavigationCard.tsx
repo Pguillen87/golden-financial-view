@@ -1,93 +1,113 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { BarChart3, Target, Receipt, LucideIcon } from 'lucide-react';
 import CategoryManager from './CategoryManager';
 import GoalsManager from './GoalsManager';
 import TransactionsManager from './TransactionsManager';
-import { BarChart3, Target, Plus } from 'lucide-react';
 
-const NavigationCard: React.FC = () => {
+interface Tab {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  gradient: string;
+}
+
+interface NavigationCardProps {
+  selectedMonth?: number;
+  selectedYear?: number;
+  dateRange?: any;
+}
+
+const NavigationCard: React.FC<NavigationCardProps> = ({
+  selectedMonth,
+  selectedYear,
+  dateRange
+}) => {
   const [activeTab, setActiveTab] = useState('categorias');
 
-  const tabs = [
-    { 
-      id: 'categorias', 
+  const tabs: Tab[] = [
+    {
+      id: 'categorias',
       label: 'Categorias',
       icon: BarChart3,
-      gradient: 'from-purple-500 to-blue-500'
+      gradient: 'from-blue-500 to-purple-500'
     },
-    { 
-      id: 'metas', 
+    {
+      id: 'metas',
       label: 'Metas',
       icon: Target,
-      gradient: 'from-blue-500 to-cyan-500'
+      gradient: 'from-green-500 to-emerald-500'
     },
-    { 
-      id: 'lancamentos', 
+    {
+      id: 'lancamentos',
       label: 'Lançamentos',
-      icon: Plus,
-      gradient: 'from-cyan-500 to-teal-500'
-    },
+      icon: Receipt,
+      gradient: 'from-orange-500 to-red-500'
+    }
   ];
 
-  return (
-    <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden backdrop-blur-xl shadow-2xl">
-      <CardContent className="p-0">
-        {/* Header com tabs modernas */}
-        <div className="relative bg-black/30 backdrop-blur-sm border-b border-gray-700/50">
-          <div className="flex w-full overflow-x-auto scrollbar-hide">
-            <div className="flex min-w-full md:min-w-0 md:w-full md:justify-center p-2">
-              {tabs.map((tab) => (
-                <motion.button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    relative py-4 px-8 text-sm font-medium whitespace-nowrap
-                    transition-all duration-300 rounded-xl mx-1 group
-                    flex items-center gap-3
-                    ${activeTab === tab.id 
-                      ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg shadow-blue-500/25` 
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }
-                  `}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <tab.icon className={`h-4 w-4 transition-transform duration-300 ${
-                    activeTab === tab.id ? 'scale-110' : 'group-hover:scale-105'
-                  }`} />
-                  {tab.label}
-                  
-                  {activeTab === tab.id && (
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent rounded-xl"
-                      layoutId="activeTab"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </div>
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'categorias':
+        return <CategoryManager />;
+      case 'metas':
+        return <GoalsManager />;
+      case 'lancamentos':
+        return (
+          <TransactionsManager 
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            dateRange={dateRange}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
-        {/* Conteúdo das tabs */}
-        <div className="p-6">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {activeTab === 'categorias' && <CategoryManager />}
-            {activeTab === 'metas' && <GoalsManager />}
-            {activeTab === 'lancamentos' && <TransactionsManager />}
-          </motion.div>
+  return (
+    <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm">
+      <h2 className="text-xl font-semibold mb-6 text-[#FFD700] bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
+        Gestão Financeira
+      </h2>
+
+      {/* Navigation Tabs */}
+      <div className="flex justify-center mb-8">
+        <div className="flex bg-black/30 rounded-2xl p-1 backdrop-blur-sm border border-gray-700/50">
+          {tabs.map((tab) => (
+            <motion.button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`
+                relative py-3 px-6 text-sm font-medium rounded-xl
+                transition-all duration-300 flex items-center gap-2
+                ${activeTab === tab.id 
+                  ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg` 
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }
+              `}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </motion.button>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Tab Content */}
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+      >
+        {renderContent()}
+      </motion.div>
+    </div>
   );
 };
 

@@ -55,6 +55,22 @@ const GoalsManager: React.FC = () => {
       deadline: '2024-06-30',
       category: 'Educação',
     },
+    {
+      id: 4,
+      name: 'Carro',
+      targetAmount: 30000,
+      currentAmount: 12000,
+      deadline: '2025-12-31',
+      category: 'Transporte',
+    },
+    {
+      id: 5,
+      name: 'Casa',
+      targetAmount: 50000,
+      currentAmount: 8000,
+      deadline: '2026-06-30',
+      category: 'Moradia',
+    },
   ]);
 
   const getProgressPercentage = (current: number, target: number) => {
@@ -130,27 +146,27 @@ const GoalsManager: React.FC = () => {
       </div>
 
       {goals.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 max-h-80 overflow-y-auto">
           {goals.map((goal) => {
             const progressPercentage = getProgressPercentage(goal.currentAmount, goal.targetAmount);
             
             return (
               <div 
                 key={goal.id} 
-                className="bg-gray-900 rounded-lg p-3 border border-gray-700 hover:border-[#FFD700] transition-all duration-300"
+                className="bg-gray-900 rounded-lg p-3 border border-gray-700 hover:border-[#FFD700] transition-all duration-300 min-w-0"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1 bg-[#1a365d] rounded-lg">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="p-1 bg-[#1a365d] rounded-lg flex-shrink-0">
                       <Target className="h-3 w-3 text-[#4299e1]" />
                     </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-white">{goal.name}</h4>
-                      <p className="text-xs text-gray-400">{goal.category}</p>
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-semibold text-white truncate">{goal.name}</h4>
+                      <p className="text-xs text-gray-400 truncate">{goal.category}</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button 
                       size="sm" 
                       variant="ghost" 
@@ -185,15 +201,15 @@ const GoalsManager: React.FC = () => {
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-gray-400">Atual</p>
-                      <p className="text-xs font-semibold text-green-400">
+                      <p className="text-xs font-semibold text-green-400 truncate">
                         {formatCurrency(goal.currentAmount)}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right min-w-0">
                       <p className="text-gray-400">Meta</p>
-                      <p className="text-xs font-semibold text-white">
+                      <p className="text-xs font-semibold text-white truncate">
                         {formatCurrency(goal.targetAmount)}
                       </p>
                     </div>
@@ -201,8 +217,8 @@ const GoalsManager: React.FC = () => {
 
                   <div className="border-t border-gray-700 pt-1">
                     <div className="flex justify-between items-center text-xs">
-                      <p className="text-gray-400">Prazo: {formatDate(goal.deadline)}</p>
-                      <p className="text-[#4299e1] font-medium">
+                      <p className="text-gray-400 truncate">Prazo: {formatDate(goal.deadline)}</p>
+                      <p className="text-[#4299e1] font-medium truncate">
                         Faltam: {formatCurrency(goal.targetAmount - goal.currentAmount)}
                       </p>
                     </div>
