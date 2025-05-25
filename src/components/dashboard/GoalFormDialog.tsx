@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface GoalFormDialogProps {
   isOpen: boolean;
@@ -27,7 +32,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
     name: '',
     targetAmount: '',
     currentAmount: '',
-    deadline: '',
+    deadline: new Date(),
     category: ''
   });
 
@@ -37,7 +42,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
         name: goal.name || '',
         targetAmount: goal.targetAmount?.toString() || '',
         currentAmount: goal.currentAmount?.toString() || '',
-        deadline: goal.deadline || '',
+        deadline: goal.deadline ? new Date(goal.deadline) : new Date(),
         category: goal.category || ''
       });
     } else {
@@ -45,7 +50,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
         name: '',
         targetAmount: '',
         currentAmount: '0',
-        deadline: '',
+        deadline: new Date(),
         category: ''
       });
     }
@@ -57,12 +62,13 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
       onSave({
         ...formData,
         targetAmount: parseFloat(formData.targetAmount),
-        currentAmount: parseFloat(formData.currentAmount) || 0
+        currentAmount: parseFloat(formData.currentAmount) || 0,
+        deadline: formData.deadline.toISOString().split('T')[0]
       });
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -129,14 +135,29 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
 
           <div>
             <Label htmlFor="deadline" className="text-white">Data Limite</Label>
-            <Input
-              id="deadline"
-              type="date"
-              value={formData.deadline}
-              onChange={(e) => handleChange('deadline', e.target.value)}
-              className="bg-gray-800 border-gray-600 text-white"
-              required
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal bg-gray-800 border-gray-600 text-white hover:bg-gray-700",
+                    !formData.deadline && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.deadline ? format(formData.deadline, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.deadline}
+                  onSelect={(date) => date && handleChange('deadline', date)}
+                  initialFocus
+                  className="pointer-events-auto bg-gray-800 text-white"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

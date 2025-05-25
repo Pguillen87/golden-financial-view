@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +11,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import CategorySelect from './CategorySelect';
 
 interface TransactionFormDialogProps {
   isOpen: boolean;
@@ -28,7 +34,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    date: '',
+    date: new Date(),
     category: '',
     type: type
   });
@@ -38,7 +44,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
       setFormData({
         description: transaction.description || '',
         amount: transaction.amount?.toString() || '',
-        date: transaction.date || '',
+        date: transaction.date ? new Date(transaction.date) : new Date(),
         category: transaction.category || '',
         type: transaction.type || type
       });
@@ -46,7 +52,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
       setFormData({
         description: '',
         amount: '',
-        date: new Date().toISOString().split('T')[0],
+        date: new Date(),
         category: '',
         type: type
       });
@@ -55,15 +61,16 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.description.trim() && formData.amount && formData.date) {
+    if (formData.description.trim() && formData.amount && formData.date && formData.category) {
       onSave({
         ...formData,
-        amount: parseFloat(formData.amount)
+        amount: parseFloat(formData.amount),
+        date: formData.date.toISOString().split('T')[0]
       });
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -91,13 +98,11 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
 
           <div>
             <Label htmlFor="category" className="text-white">Categoria</Label>
-            <Input
-              id="category"
+            <CategorySelect
+              type={type}
               value={formData.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              placeholder="Ex: Trabalho, Moradia"
-              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
-              required
+              onChange={(value) => handleChange('category', value)}
+              placeholder={`Selecione uma categoria de ${type === 'income' ? 'receita' : 'despesa'}`}
             />
           </div>
 
@@ -118,14 +123,29 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
 
             <div>
               <Label htmlFor="date" className="text-white">Data</Label>
-              <Input
-                id="date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleChange('date', e.target.value)}
-                className="bg-gray-800 border-gray-600 text-white"
-                required
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-gray-800 border-gray-600 text-white hover:bg-gray-700",
+                      !formData.date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.date ? format(formData.date, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.date}
+                    onSelect={(date) => date && handleChange('date', date)}
+                    initialFocus
+                    className="pointer-events-auto bg-gray-800 text-white"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

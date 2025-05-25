@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
 import TransactionFormDialog from './TransactionFormDialog';
 
 const FloatingActionButtons: React.FC = () => {
@@ -19,19 +19,21 @@ const FloatingActionButtons: React.FC = () => {
         {/* Botão de Receita */}
         <button
           onClick={() => setIsIncomeDialogOpen(true)}
-          className="w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
+          className="flex items-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
           title="Adicionar Receita"
         >
-          <Plus className="h-6 w-6" />
+          <TrendingUp className="h-5 w-5" />
+          <span className="text-sm font-medium">Receita</span>
         </button>
 
         {/* Botão de Despesa */}
         <button
           onClick={() => setIsExpenseDialogOpen(true)}
-          className="w-14 h-14 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
+          className="flex items-center gap-2 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
           title="Adicionar Despesa"
         >
-          <Plus className="h-6 w-6 rotate-45" />
+          <TrendingDown className="h-5 w-5" />
+          <span className="text-sm font-medium">Despesa</span>
         </button>
       </div>
 
