@@ -14,13 +14,11 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
   LineChart,
   Line,
-  Legend,
 } from 'recharts';
 
 interface FinancialChartProps {
@@ -78,15 +76,17 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
           ? 'bg-gray-800 border border-gray-700' 
           : 'bg-white border border-gray-200'
       }`}>
-        <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
-          theme === 'dark' 
-            ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
-            : 'text-blue-900'
-        }`}>
-          {title}
-        </h3>
+        {title && (
+          <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
+            theme === 'dark' 
+              ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+              : 'text-blue-900'
+          }`}>
+            {title}
+          </h3>
+        )}
         <div className="h-64 md:h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig}>
             <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
               <XAxis 
@@ -103,14 +103,11 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                 content={<ChartTooltipContent />}
                 formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
               />
-              <Legend 
-                wrapperStyle={{ color: textColor }}
-                formatter={(value) => <span style={{ color: textColor }}>{value}</span>}
-              />
+              <ChartLegend content={<ChartLegendContent />} />
               <Bar dataKey="entradas" fill="#4CAF50" radius={[4, 4, 0, 0]} name="Entradas" />
               <Bar dataKey="saidas" fill="#F44336" radius={[4, 4, 0, 0]} name="Saídas" />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
       </div>
     );
@@ -123,15 +120,17 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
           ? 'bg-gray-800 border border-gray-700' 
           : 'bg-white border border-gray-200'
       }`}>
-        <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
-          theme === 'dark' 
-            ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
-            : 'text-blue-900'
-        }`}>
-          {title}
-        </h3>
+        {title && (
+          <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
+            theme === 'dark' 
+              ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+              : 'text-blue-900'
+          }`}>
+            {title}
+          </h3>
+        )}
         <div className="h-64 md:h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig}>
             <PieChart>
               <Pie
                 data={data}
@@ -153,12 +152,9 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                 content={<ChartTooltipContent />}
                 formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
               />
-              <Legend 
-                wrapperStyle={{ color: textColor }}
-                formatter={(value) => <span style={{ color: textColor }}>{value}</span>}
-              />
+              <ChartLegend content={<ChartLegendContent />} />
             </PieChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
       </div>
     );
@@ -171,15 +167,17 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
           ? 'bg-gray-800 border border-gray-700' 
           : 'bg-white border border-gray-200'
       }`}>
-        <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
-          theme === 'dark' 
-            ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
-            : 'text-blue-900'
-        }`}>
-          {title}
-        </h3>
+        {title && (
+          <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
+            theme === 'dark' 
+              ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+              : 'text-blue-900'
+          }`}>
+            {title}
+          </h3>
+        )}
         <div className="h-64 md:h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig}>
             <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
               <XAxis 
@@ -205,7 +203,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                 activeDot={{ r: 8, fill: theme === 'dark' ? '#FFD700' : '#1E90FF' }}
               />
             </LineChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
       </div>
     );
