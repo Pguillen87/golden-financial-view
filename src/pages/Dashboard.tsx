@@ -141,7 +141,6 @@ const Dashboard = () => {
     value: valor,
   }));
 
-  // Dados mock para transações recentes
   const recentTransactions = [
     { id: 1, description: 'Salário', amount: 5000, date: '2024-05-20', type: 'income' as const },
     { id: 2, description: 'Freelance', amount: 1500, date: '2024-05-18', type: 'income' as const },
@@ -160,10 +159,7 @@ const Dashboard = () => {
         onToggleHiddenCards={() => setShowHiddenCards(!showHiddenCards)}
       />
 
-      <div className="p-4 md:p-6 space-y-6 md:space-y-8">
-        {/* Navegação Principal por Abas */}
-        <MainNavigationTabs />
-
+      <div className="p-4 md:p-6 space-y-6 md:space-y-8 pb-32">
         {/* Cards de Estatísticas */}
         <div>
           <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
@@ -247,6 +243,11 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Navegação Principal no Rodapé */}
+      <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 p-4">
+        <MainNavigationTabs />
       </div>
 
       {/* Botões Flutuantes */}

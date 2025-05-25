@@ -21,6 +21,7 @@ import {
   Cell,
   LineChart,
   Line,
+  ResponsiveContainer,
 } from 'recharts';
 
 interface FinancialChartProps {
@@ -31,6 +32,7 @@ interface FinancialChartProps {
   nameKey?: string;
   colors?: string[];
   showToggle?: boolean;
+  showPercentage?: boolean;
   incomeData?: any[];
   expenseData?: any[];
 }
@@ -54,6 +56,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
   nameKey = 'name',
   colors = defaultColors,
   showToggle = false,
+  showPercentage = false,
   incomeData = [],
   expenseData = [],
 }) => {
@@ -75,26 +78,36 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
     },
   };
 
-  const textColor = theme === 'dark' ? '#ffffff' : '#374151';
-  const gridColor = theme === 'dark' ? '#374151' : '#e5e7eb';
+  const textColor = '#ffffff';
+  const gridColor = '#374151';
 
   const currentData = showToggle ? (showIncome ? incomeData : expenseData) : data;
+
+  // Calcular percentuais para gráfico de pizza
+  const dataWithPercentage = showPercentage ? currentData.map(item => {
+    const total = currentData.reduce((sum, d) => sum + d[dataKey], 0);
+    const percentage = ((item[dataKey] / total) * 100).toFixed(1);
+    return { ...item, percentage };
+  }) : currentData;
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className={`p-3 rounded-lg shadow-lg border ${
-          theme === 'dark' 
-            ? 'bg-gray-800 border-gray-600 text-white' 
-            : 'bg-white border-gray-300 text-gray-900'
-        }`}>
+        <div className="p-3 rounded-lg shadow-lg border bg-gray-800 border-gray-600 text-white">
           {label && (
             <p className="font-medium mb-2 text-white">{label}</p>
           )}
           {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }} className="text-white">
-              {`${entry.name || entry.dataKey}: R$ ${entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-            </p>
+            <div key={index}>
+              <p style={{ color: entry.color }} className="text-white">
+                {`${entry.name || entry.dataKey}: R$ ${entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              </p>
+              {showPercentage && entry.payload.percentage && (
+                <p style={{ color: entry.color }} className="text-sm text-gray-300">
+                  {entry.payload.percentage}%
+                </p>
+              )}
+            </div>
           ))}
         </div>
       );
@@ -122,18 +135,19 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
     );
   };
 
+  const renderCustomizedLabel = (entry: any) => {
+    if (!showPercentage) return null;
+    const total = dataWithPercentage.reduce((sum, d) => sum + d[dataKey], 0);
+    const percentage = ((entry[dataKey] / total) * 100).toFixed(1);
+    return `${percentage}%`;
+  };
+
   if (type === 'bar') {
     return (
-      <div className={`p-6 rounded-2xl shadow-lg border-2 transition-colors duration-300 ${
-        theme === 'dark' 
-          ? 'bg-gray-900 border-gray-700' 
-          : 'bg-white border-gray-200'
-      }`}>
+      <div className="p-4 rounded-2xl shadow-lg border-2 transition-colors duration-300 bg-gray-900 border-gray-700">
         <div className="flex items-center justify-between mb-4">
           {title && (
-            <h3 className={`text-lg font-semibold ${
-              theme === 'dark' ? 'text-gold' : 'text-navy'
-            }`}>
+            <h3 className="text-lg font-semibold text-[#FFD700]">
               {title}
             </h3>
           )}
@@ -154,7 +168,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
           )}
         </div>
         <div className="h-80 w-full">
-          <ChartContainer config={chartConfig}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={currentData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
               <XAxis 
@@ -182,7 +196,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                 />
               )}
             </BarChart>
-          </ChartContainer>
+          </ResponsiveContainer>
         </div>
       </div>
     );
@@ -190,22 +204,16 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
 
   if (type === 'pie') {
     return (
-      <div className={`p-6 rounded-2xl shadow-lg border-2 transition-colors duration-300 ${
-        theme === 'dark' 
-          ? 'bg-gray-900 border-gray-700' 
-          : 'bg-white border-gray-200'
-      }`}>
-        <div className="flex items-center justify-between mb-4">
+      <div className="h-full w-full">
+        <div className="flex items-center justify-between mb-2">
           {title && (
-            <h3 className={`text-lg font-semibold ${
-              theme === 'dark' ? 'text-gold' : 'text-navy'
-            }`}>
+            <h3 className="text-lg font-semibold text-[#FFD700]">
               {title}
             </h3>
           )}
           {showToggle && (
             <div className="flex items-center space-x-2">
-              <Label htmlFor="pie-toggle" className="text-sm text-gray-400">
+              <Label htmlFor="pie-toggle" className="text-xs text-gray-400">
                 Despesas
               </Label>
               <Switch
@@ -213,41 +221,42 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                 checked={showIncome}
                 onCheckedChange={setShowIncome}
               />
-              <Label htmlFor="pie-toggle" className="text-sm text-green-500">
+              <Label htmlFor="pie-toggle" className="text-xs text-green-500">
                 Receitas
               </Label>
             </div>
           )}
         </div>
-        <div className="h-80 w-full">
-          <ChartContainer config={chartConfig}>
-            <PieChart margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
               <Pie
-                data={currentData}
+                data={dataWithPercentage}
                 cx="50%"
-                cy="40%"
-                innerRadius={50}
-                outerRadius={100}
-                paddingAngle={2}
+                cy="50%"
+                labelLine={false}
+                label={showPercentage ? renderCustomizedLabel : false}
+                outerRadius={80}
+                fill="#8884d8"
                 dataKey={dataKey}
               >
-                {currentData.map((entry, index) => (
+                {dataWithPercentage.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
-                    fill={colors[index % colors.length]} 
+                    fill={entry.color || colors[index % colors.length]} 
                   />
                 ))}
               </Pie>
               <ChartTooltip content={<CustomTooltip />} />
             </PieChart>
-          </ChartContainer>
-          <CustomLegend 
-            payload={currentData.map((item, index) => ({
-              value: item[nameKey],
-              color: colors[index % colors.length]
-            }))}
-          />
+          </ResponsiveContainer>
         </div>
+        <CustomLegend 
+          payload={dataWithPercentage.map((item, index) => ({
+            value: item[nameKey],
+            color: item.color || colors[index % colors.length]
+          }))}
+        />
       </div>
     );
   }

@@ -11,28 +11,28 @@ const MainNavigationTabs: React.FC = () => {
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-900 border border-[#1a365d]">
+        <TabsList className="grid w-full grid-cols-3 bg-black border border-[#FFD700] rounded-lg">
           <TabsTrigger 
             value="categorias" 
-            className="text-gray-300 data-[state=active]:bg-[#1a365d] data-[state=active]:text-[#4299e1] data-[state=active]:border-[#4299e1]"
+            className="text-gray-300 data-[state=active]:bg-[#1a365d] data-[state=active]:text-[#FFD700] data-[state=active]:border-[#FFD700] rounded-md mx-1"
           >
             Categorias
           </TabsTrigger>
           <TabsTrigger 
             value="metas" 
-            className="text-gray-300 data-[state=active]:bg-[#1a365d] data-[state=active]:text-[#4299e1] data-[state=active]:border-[#4299e1]"
+            className="text-gray-300 data-[state=active]:bg-[#1a365d] data-[state=active]:text-[#FFD700] data-[state=active]:border-[#FFD700] rounded-md mx-1"
           >
             Metas
           </TabsTrigger>
           <TabsTrigger 
             value="lancamentos" 
-            className="text-gray-300 data-[state=active]:bg-[#1a365d] data-[state=active]:text-[#4299e1] data-[state=active]:border-[#4299e1]"
+            className="text-gray-300 data-[state=active]:bg-[#1a365d] data-[state=active]:text-[#FFD700] data-[state=active]:border-[#FFD700] rounded-md mx-1"
           >
             Lançamentos
           </TabsTrigger>
         </TabsList>
 
-        <div className="mt-6">
+        <div className="mt-6 max-h-96 overflow-y-auto">
           <TabsContent value="categorias" className="mt-0">
             <CategoryManager />
           </TabsContent>
