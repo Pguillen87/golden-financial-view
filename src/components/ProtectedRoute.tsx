@@ -62,13 +62,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           <h2 className={`text-3xl font-bold mb-4 ${
             theme === 'dark' ? 'text-red-400' : 'text-red-600'
           }`}>
-            Assinatura Vencida
+            Assinatura Pendente
           </h2>
-          <p className="text-xl">
-            Renove para acessar o sistema.
+          <p className="text-xl mb-4">
+            Sua conta está aguardando ativação.
           </p>
-          <p className="text-lg mt-4 opacity-80">
-            Entre em contato com o suporte para reativar sua conta.
+          <p className="text-lg opacity-80">
+            Complete o pagamento da mensalidade para acessar o sistema financeiro.
           </p>
         </div>
       </div>

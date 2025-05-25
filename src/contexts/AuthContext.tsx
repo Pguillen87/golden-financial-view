@@ -39,10 +39,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch cliente data when user logs in
+          // Aguardar um pouco para garantir que o trigger foi executado (apenas para novos usuários)
           setTimeout(async () => {
             await fetchClienteData(session.user.id);
-          }, 0);
+          }, 100);
         } else {
           setCliente(null);
         }
@@ -71,6 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchClienteData = async (authUserId: string) => {
     try {
+      console.log('Buscando dados do cliente para:', authUserId);
+      
       const { data, error } = await supabase
         .from('financeiro_clientes')
         .select('*')
@@ -84,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data) {
+        console.log('Dados do cliente encontrados:', data);
         setCliente({
           id: data.id,
           nome: data.nome,
@@ -117,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
+        console.log('Usuário cadastrado com sucesso. O trigger deve criar o registro em financeiro_clientes.');
         return { success: true };
       }
 
