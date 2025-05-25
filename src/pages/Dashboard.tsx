@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
@@ -9,9 +10,9 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import StatsCards from '@/components/dashboard/StatsCards';
 import MovableCard from '@/components/dashboard/MovableCard';
 import FilterCard from '@/components/dashboard/FilterCard';
-import NavigationCards from '@/components/dashboard/NavigationCards';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import FloatingActionButtons from '@/components/dashboard/FloatingActionButtons';
+import MainNavigationTabs from '@/components/dashboard/MainNavigationTabs';
 
 interface FinanceiroEntrada {
   id: number;
@@ -153,30 +154,19 @@ const Dashboard = () => {
   }
 
   return (
-    <div className={`min-h-screen transition-all duration-500 ${
-      theme === 'dark' ? 'bg-black' : 'bg-gray-50'
-    }`}>
+    <div className="min-h-screen bg-black">
       <DashboardHeader
         showHiddenCards={showHiddenCards}
         onToggleHiddenCards={() => setShowHiddenCards(!showHiddenCards)}
       />
 
       <div className="p-4 md:p-6 space-y-6 md:space-y-8">
-        {/* Navegação por Cards */}
-        <div>
-          <h2 className={`text-xl md:text-2xl font-semibold mb-4 ${
-            theme === 'dark' ? 'text-gold' : 'text-navy'
-          }`}>
-            Navegação Rápida
-          </h2>
-          <NavigationCards />
-        </div>
+        {/* Navegação Principal por Abas */}
+        <MainNavigationTabs />
 
         {/* Cards de Estatísticas */}
         <div>
-          <h2 className={`text-xl md:text-2xl font-semibold mb-4 ${
-            theme === 'dark' ? 'text-gold' : 'text-navy'
-          }`}>
+          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
             Resumo Financeiro
           </h2>
           <StatsCards
@@ -189,9 +179,7 @@ const Dashboard = () => {
 
         {/* Lançamentos Recentes */}
         <div>
-          <h2 className={`text-xl md:text-2xl font-semibold mb-4 ${
-            theme === 'dark' ? 'text-gold' : 'text-navy'
-          }`}>
+          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
             Lançamentos Recentes
           </h2>
           <RecentTransactions transactions={recentTransactions} />
@@ -217,9 +205,7 @@ const Dashboard = () => {
 
         {/* Gráficos */}
         <div>
-          <h2 className={`text-xl md:text-2xl font-semibold mb-4 ${
-            theme === 'dark' ? 'text-gold' : 'text-navy'
-          }`}>
+          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
             Análises Gráficas
           </h2>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
