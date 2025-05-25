@@ -70,10 +70,12 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
     setIsLoading(false);
   };
 
+  const displayPlaceholder = isLoading ? "Carregando..." : (categories.length === 0 ? "Nenhuma categoria encontrada" : placeholder);
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-        <SelectValue placeholder={isLoading ? "Carregando..." : placeholder} />
+        <SelectValue placeholder={displayPlaceholder} />
       </SelectTrigger>
       <SelectContent className="bg-gray-800 border-gray-600 text-white z-50">
         {categories.length > 0 ? (
@@ -92,11 +94,11 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
               </div>
             </SelectItem>
           ))
-        ) : (
-          <SelectItem value="" disabled className="text-gray-400">
-            {isLoading ? "Carregando categorias..." : "Nenhuma categoria encontrada"}
-          </SelectItem>
-        )}
+        ) : !isLoading ? (
+          <div className="px-2 py-1.5 text-sm text-gray-400">
+            Nenhuma categoria encontrada
+          </div>
+        ) : null}
       </SelectContent>
     </Select>
   );
