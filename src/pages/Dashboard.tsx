@@ -1,14 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { supabase } from '@/integrations/supabase/client';
-import { Filter, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DateRange } from 'react-day-picker';
 import FinancialChart from '@/components/charts/FinancialChart';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import CurrentBalanceCard from '@/components/dashboard/CurrentBalanceCard';
 import ModernStatsCard from '@/components/dashboard/ModernStatsCard';
 import MovableCard from '@/components/dashboard/MovableCard';
+import FilterCard from '@/components/dashboard/FilterCard';
 
 interface FinanceiroEntrada {
   id: number;
@@ -37,24 +40,36 @@ const Dashboard = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [hiddenCards, setHiddenCards] = useState<Set<string>>(new Set());
   const [showHiddenCards, setShowHiddenCards] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   useEffect(() => {
     if (cliente) {
       fetchFinancialData();
     }
-  }, [cliente, selectedMonth, selectedYear]);
+  }, [cliente, selectedMonth, selectedYear, dateRange]);
 
   const fetchFinancialData = async () => {
     if (!cliente) return;
 
     setIsLoading(true);
     try {
+      let startDate: string;
+      let endDate: string;
+
+      if (dateRange?.from && dateRange?.to) {
+        startDate = dateRange.from.toISOString().split('T')[0];
+        endDate = dateRange.to.toISOString().split('T')[0];
+      } else {
+        startDate = `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-01`;
+        endDate = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-01`;
+      }
+
       const { data: entradasData, error: entradasError } = await supabase
         .from('financeiro_entradas')
         .select('*')
         .eq('cliente_id', cliente.id)
-        .gte('data', `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-01`)
-        .lt('data', `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-01`);
+        .gte('data', startDate)
+        .lt('data', endDate);
 
       if (entradasError) {
         console.error('Erro ao buscar entradas:', entradasError);
@@ -66,8 +81,8 @@ const Dashboard = () => {
         .from('financeiro_saidas')
         .select('*')
         .eq('cliente_id', cliente.id)
-        .gte('data', `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-01`)
-        .lt('data', `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-01`);
+        .gte('data', startDate)
+        .lt('data', endDate);
 
       if (saidasError) {
         console.error('Erro ao buscar saídas:', saidasError);
@@ -132,15 +147,15 @@ const Dashboard = () => {
   return (
     <div className={`min-h-screen transition-all duration-500 ${
       theme === 'dark' 
-        ? 'bg-gradient-to-br from-gray-900 via-black to-gray-800' 
-        : 'bg-gradient-to-br from-blue-50 via-white to-blue-100'
+        ? 'bg-black' 
+        : 'bg-gray-50'
     }`}>
       <DashboardHeader
         showHiddenCards={showHiddenCards}
         onToggleHiddenCards={() => setShowHiddenCards(!showHiddenCards)}
       />
 
-      <div className="p-6 space-y-8">
+      <div className="p-4 md:p-6 space-y-6 md:space-y-8">
         {/* Saldo Atual */}
         <CurrentBalanceCard 
           saldo={saldo} 
@@ -156,41 +171,17 @@ const Dashboard = () => {
           onShow={() => showCard('filters')}
           showControls={showHiddenCards}
         >
-          <div className="flex items-center gap-4 mb-4">
-            <Filter className={`h-6 w-6 ${theme === 'dark' ? 'text-yellow-400' : 'text-blue-600'}`} />
-          </div>
-          <div className="flex gap-4">
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className={`p-3 rounded-xl text-lg transition-all duration-300 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800 border-yellow-400/30 text-yellow-400 focus:border-yellow-400' 
-                  : 'bg-blue-50 border-blue-300 text-blue-900 focus:border-blue-500'
-              }`}
-            >
-              {months.map((month, index) => (
-                <option key={index} value={index + 1}>{month}</option>
-              ))}
-            </select>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className={`p-3 rounded-xl text-lg transition-all duration-300 ${
-                theme === 'dark' 
-                  ? 'bg-gray-800 border-yellow-400/30 text-yellow-400 focus:border-yellow-400' 
-                  : 'bg-blue-50 border-blue-300 text-blue-900 focus:border-blue-500'
-              }`}
-            >
-              {[2023, 2024, 2025].map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
+          <FilterCard
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDateRangeChange={setDateRange}
+          />
         </MovableCard>
 
         {/* Cards de Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <MovableCard
             id="receitas"
             title="Receitas"
@@ -205,7 +196,7 @@ const Dashboard = () => {
               icon={TrendingUp}
               color="green"
               trend="up"
-              subtitle="Receitas do mês"
+              subtitle="Receitas do período"
             />
           </MovableCard>
 
@@ -223,7 +214,7 @@ const Dashboard = () => {
               icon={TrendingDown}
               color="red"
               trend="down"
-              subtitle="Despesas do mês"
+              subtitle="Despesas do período"
             />
           </MovableCard>
 
@@ -247,10 +238,10 @@ const Dashboard = () => {
         </div>
 
         {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
           <MovableCard
             id="chart-bar"
-            title="Receitas vs. Despesas por Mês"
+            title="Receitas vs. Despesas"
             isHidden={hiddenCards.has('chart-bar')}
             onHide={() => hideCard('chart-bar')}
             onShow={() => showCard('chart-bar')}
@@ -284,7 +275,7 @@ const Dashboard = () => {
         </div>
 
         {/* Tendências Mensais */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
           <MovableCard
             id="evolucao-receitas"
             title="Evolução das Receitas"
@@ -293,15 +284,10 @@ const Dashboard = () => {
             onShow={() => showCard('evolucao-receitas')}
             showControls={showHiddenCards}
           >
-            <p className={`text-sm mb-4 ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              Tendência de suas receitas mensais.
-            </p>
             <FinancialChart
               data={[{ name: months[selectedMonth - 1], value: totalEntradas }]}
               type="line"
-              title=""
+              title="Tendência de Receitas"
               dataKey="value"
               nameKey="name"
             />
@@ -315,15 +301,10 @@ const Dashboard = () => {
             onShow={() => showCard('evolucao-despesas')}
             showControls={showHiddenCards}
           >
-            <p className={`text-sm mb-4 ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              Tendência de suas despesas mensais.
-            </p>
             <FinancialChart
               data={[{ name: months[selectedMonth - 1], value: totalSaidas }]}
               type="line"
-              title=""
+              title="Tendência de Despesas"
               dataKey="value"
               nameKey="name"
             />
