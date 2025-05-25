@@ -4,7 +4,8 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { LogOut, Sun, Moon } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,7 +13,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, cliente, isLoading, signOut } = useAuth();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -67,37 +68,66 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           <div className={`text-center mb-6 ${
             theme === 'dark' ? 'text-yellow-400' : 'text-blue-900'
           }`}>
-            <h1 className="text-4xl font-bold tracking-wider">
+            <h1 className={`text-4xl font-bold tracking-wider ${
+              theme === 'dark' 
+                ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+                : 'text-blue-900'
+            }`}>
               GUILLEN <span className={theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}>IA</span>
             </h1>
           </div>
 
-          {/* Cartão principal com gradiente */}
-          <div className={`relative text-center p-10 rounded-3xl shadow-2xl max-w-lg mx-auto overflow-hidden ${
+          {/* Cartão principal com fundo sólido */}
+          <div className={`relative text-center p-10 rounded-3xl shadow-2xl max-w-lg mx-auto ${
             theme === 'dark' 
-              ? 'border border-yellow-400/30' 
-              : 'border border-blue-200/30'
+              ? 'bg-black border border-yellow-400/30' 
+              : 'bg-white border border-blue-200/30'
           }`}>
-            {/* Gradiente de fundo */}
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/80 via-yellow-500/60 to-blue-500/20 opacity-90"></div>
+            {/* Toggle de tema no canto superior direito */}
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <Sun className={`h-4 w-4 ${theme === 'light' ? 'text-yellow-500' : 'text-gray-400'}`} />
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={toggleTheme}
+                aria-label="Alternar entre modo claro e escuro"
+                className="data-[state=checked]:bg-yellow-400"
+              />
+              <Moon className={`h-4 w-4 ${theme === 'dark' ? 'text-blue-400' : 'text-gray-400'}`} />
+            </div>
             
-            {/* Conteúdo sobre o gradiente */}
-            <div className="relative z-10 text-gray-900">
-              <h2 className="text-4xl font-bold mb-6 text-blue-900">
+            {/* Conteúdo do cartão */}
+            <div className="pt-8">
+              <h2 className={`text-4xl font-bold mb-6 ${
+                theme === 'dark' 
+                  ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+                  : 'text-blue-900'
+              }`}>
                 Assinatura Pendente
               </h2>
               
-              <p className="text-xl mb-6 font-medium">
+              <p className={`text-xl mb-6 font-medium ${
+                theme === 'dark' ? 'text-white' : 'text-gray-800'
+              }`}>
                 Sua conta está aguardando ativação.
               </p>
               
-              <p className="text-lg mb-8 opacity-80">
+              <p className={`text-lg mb-8 ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 Complete o pagamento da mensalidade para acessar o sistema financeiro.
               </p>
 
               {/* Frase motivacional */}
-              <div className="bg-white/90 rounded-2xl p-6 mb-8 shadow-lg">
-                <p className="text-2xl font-semibold text-blue-900 italic">
+              <div className={`rounded-2xl p-6 mb-8 shadow-lg ${
+                theme === 'dark' 
+                  ? 'bg-gray-900 border border-yellow-400/20' 
+                  : 'bg-blue-50 border border-blue-200'
+              }`}>
+                <p className={`text-2xl font-semibold italic ${
+                  theme === 'dark' 
+                    ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+                    : 'text-blue-900'
+                }`}>
                   "Organize suas finanças, transforme seu futuro com Guillen IA!"
                 </p>
               </div>
@@ -106,7 +136,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
               <Button
                 onClick={handleBackToLogin}
                 size="lg"
-                className="w-full h-16 text-xl font-bold bg-blue-900 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-blue-300"
+                className={`w-full h-16 text-xl font-bold transition-all duration-300 transform hover:scale-105 focus:ring-4 ${
+                  theme === 'dark'
+                    ? 'bg-yellow-400 text-black hover:bg-yellow-500 focus:ring-yellow-300'
+                    : 'bg-blue-900 text-white hover:bg-blue-800 focus:ring-blue-300'
+                }`}
                 aria-label="Voltar para a tela de login"
                 tabIndex={0}
               >
