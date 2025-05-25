@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
@@ -12,7 +11,7 @@ import MovableCard from '@/components/dashboard/MovableCard';
 import FilterCard from '@/components/dashboard/FilterCard';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import FloatingActionButtons from '@/components/dashboard/FloatingActionButtons';
-import MainNavigationTabs from '@/components/dashboard/MainNavigationTabs';
+import NavigationCard from '@/components/dashboard/NavigationCard';
 
 interface FinanceiroEntrada {
   id: number;
@@ -243,11 +242,14 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Navegação Principal no Rodapé */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 p-4">
-        <MainNavigationTabs />
+        {/* Navegação Principal como último card */}
+        <div>
+          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
+            Gestão Financeira
+          </h2>
+          <NavigationCard />
+        </div>
       </div>
 
       {/* Botões Flutuantes */}
