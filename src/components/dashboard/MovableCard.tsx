@@ -69,13 +69,13 @@ const MovableCard: React.FC<MovableCardProps> = ({
       onDragStart={() => setIsDragging(true)}
       onDragEnd={() => setIsDragging(false)}
     >
-      <div className={`p-6 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+      <div className={`rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl ${
         theme === 'dark' 
-          ? 'bg-gray-900/80 border border-yellow-400/20' 
-          : 'bg-white/80 border border-blue-200'
+          ? 'bg-gray-900 border border-gray-700' 
+          : 'bg-white border border-gray-200'
       }`}>
         {showControls && (
-          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
             <Button
               variant="ghost"
               size="sm"
@@ -104,15 +104,17 @@ const MovableCard: React.FC<MovableCardProps> = ({
           </div>
         )}
         
-        <h3 className={`text-xl font-semibold mb-4 ${
-          theme === 'dark' 
-            ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
-            : 'text-blue-900'
-        }`}>
-          {title}
-        </h3>
-        
-        {children}
+        <div className="p-6">
+          <h3 className={`text-xl font-semibold mb-4 ${
+            theme === 'dark' 
+              ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+              : 'text-blue-900'
+          }`}>
+            {title}
+          </h3>
+          
+          {children}
+        </div>
       </div>
     </div>
   );

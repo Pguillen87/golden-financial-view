@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Sun, Moon, Menu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import DashboardNavigation from '@/components/navigation/NavigationMenu';
 
 interface DashboardHeaderProps {
   showHiddenCards: boolean;
@@ -58,51 +57,47 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </p>
         </div>
         
-        <div className="flex flex-col space-y-2 md:space-y-0 md:flex-row md:items-center md:space-x-4">
-          <DashboardNavigation />
+        <div className="flex items-center gap-2 md:gap-3">
+          <Button
+            onClick={onToggleHiddenCards}
+            variant="outline"
+            size="sm"
+            className={`text-xs md:text-sm transition-all duration-300 ${
+              theme === 'dark' 
+                ? 'border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-black' 
+                : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+            }`}
+          >
+            <Menu className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            {showHiddenCards ? 'Ocultar Controles' : 'Mostrar Controles'}
+          </Button>
           
-          <div className="flex items-center gap-2 md:gap-3">
-            <Button
-              onClick={onToggleHiddenCards}
-              variant="outline"
-              size="sm"
-              className={`text-xs md:text-sm transition-all duration-300 ${
-                theme === 'dark' 
-                  ? 'border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-black' 
-                  : 'border-blue-300 text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-              <Menu className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-              {showHiddenCards ? 'Ocultar Controles' : 'Mostrar Controles'}
-            </Button>
-            
-            <Button
-              onClick={toggleTheme}
-              variant="outline"
-              size="icon"
-              className={`h-8 w-8 md:h-10 md:w-10 transition-all duration-300 ${
-                theme === 'dark' 
-                  ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' 
-                  : 'border-blue-300 text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-              {theme === 'dark' ? <Sun className="h-3 w-3 md:h-4 md:w-4" /> : <Moon className="h-3 w-3 md:h-4 md:w-4" />}
-            </Button>
-            
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className={`text-xs md:text-sm transition-all duration-300 ${
-                theme === 'dark' 
-                  ? 'border-red-400 text-red-400 hover:bg-red-400 hover:text-black' 
-                  : 'border-red-300 text-red-600 hover:bg-red-50'
-              }`}
-            >
-              <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-              Sair
-            </Button>
-          </div>
+          <Button
+            onClick={toggleTheme}
+            variant="outline"
+            size="icon"
+            className={`h-8 w-8 md:h-10 md:w-10 transition-all duration-300 ${
+              theme === 'dark' 
+                ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' 
+                : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+            }`}
+          >
+            {theme === 'dark' ? <Sun className="h-3 w-3 md:h-4 md:w-4" /> : <Moon className="h-3 w-3 md:h-4 md:w-4" />}
+          </Button>
+          
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className={`text-xs md:text-sm transition-all duration-300 ${
+              theme === 'dark' 
+                ? 'border-red-400 text-red-400 hover:bg-red-400 hover:text-black' 
+                : 'border-red-300 text-red-600 hover:bg-red-50'
+            }`}
+          >
+            <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            Sair
+          </Button>
         </div>
       </div>
     </header>

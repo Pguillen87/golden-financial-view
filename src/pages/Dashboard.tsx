@@ -3,15 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DateRange } from 'react-day-picker';
 import FinancialChart from '@/components/charts/FinancialChart';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import CurrentBalanceCard from '@/components/dashboard/CurrentBalanceCard';
-import ModernStatsCard from '@/components/dashboard/ModernStatsCard';
+import StatsCards from '@/components/dashboard/StatsCards';
 import MovableCard from '@/components/dashboard/MovableCard';
 import FilterCard from '@/components/dashboard/FilterCard';
+import NavigationCards from '@/components/dashboard/NavigationCards';
 
 interface FinanceiroEntrada {
   id: number;
@@ -156,16 +155,35 @@ const Dashboard = () => {
       />
 
       <div className="p-4 md:p-6 space-y-6 md:space-y-8">
-        {/* Saldo Atual */}
-        <CurrentBalanceCard 
-          saldo={saldo} 
-          selectedMonth={months[selectedMonth - 1]} 
-        />
+        {/* Navegação por Cards */}
+        <div>
+          <h2 className={`text-xl md:text-2xl font-semibold mb-4 ${
+            theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+          }`}>
+            Navegação Rápida
+          </h2>
+          <NavigationCards />
+        </div>
+
+        {/* Cards de Estatísticas Integrados */}
+        <div>
+          <h2 className={`text-xl md:text-2xl font-semibold mb-4 ${
+            theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+          }`}>
+            Resumo Financeiro
+          </h2>
+          <StatsCards
+            totalEntradas={totalEntradas}
+            totalSaidas={totalSaidas}
+            saldo={saldo}
+            selectedMonth={months[selectedMonth - 1]}
+          />
+        </div>
 
         {/* Filtros */}
         <MovableCard
           id="filters"
-          title="Filtros"
+          title="Filtros de Período"
           isHidden={hiddenCards.has('filters')}
           onHide={() => hideCard('filters')}
           onShow={() => showCard('filters')}
@@ -180,135 +198,92 @@ const Dashboard = () => {
           />
         </MovableCard>
 
-        {/* Cards de Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <MovableCard
-            id="receitas"
-            title="Receitas"
-            isHidden={hiddenCards.has('receitas')}
-            onHide={() => hideCard('receitas')}
-            onShow={() => showCard('receitas')}
-            showControls={showHiddenCards}
-          >
-            <ModernStatsCard
-              title="Total de Entradas"
-              value={`R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              icon={TrendingUp}
-              color="green"
-              trend="up"
-              subtitle="Receitas do período"
-            />
-          </MovableCard>
-
-          <MovableCard
-            id="despesas"
-            title="Despesas"
-            isHidden={hiddenCards.has('despesas')}
-            onHide={() => hideCard('despesas')}
-            onShow={() => showCard('despesas')}
-            showControls={showHiddenCards}
-          >
-            <ModernStatsCard
-              title="Total de Saídas"
-              value={`R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              icon={TrendingDown}
-              color="red"
-              trend="down"
-              subtitle="Despesas do período"
-            />
-          </MovableCard>
-
-          <MovableCard
-            id="saldo"
-            title="Saldo"
-            isHidden={hiddenCards.has('saldo')}
-            onHide={() => hideCard('saldo')}
-            onShow={() => showCard('saldo')}
-            showControls={showHiddenCards}
-          >
-            <ModernStatsCard
-              title="Saldo Atual"
-              value={`R$ ${Math.abs(saldo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              icon={DollarSign}
-              color={saldo >= 0 ? 'blue' : 'red'}
-              trend={saldo >= 0 ? 'up' : 'down'}
-              subtitle={saldo >= 0 ? 'Positivo' : 'Negativo'}
-            />
-          </MovableCard>
-        </div>
-
         {/* Gráficos */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-          <MovableCard
-            id="chart-bar"
-            title="Receitas vs. Despesas"
-            isHidden={hiddenCards.has('chart-bar')}
-            onHide={() => hideCard('chart-bar')}
-            onShow={() => showCard('chart-bar')}
-            showControls={showHiddenCards}
-          >
-            <FinancialChart
-              data={chartData}
-              type="bar"
-              title=""
-            />
-          </MovableCard>
-
-          {pieData.length > 0 && (
+        <div>
+          <h2 className={`text-xl md:text-2xl font-semibold mb-4 ${
+            theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+          }`}>
+            Análises Gráficas
+          </h2>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
             <MovableCard
-              id="chart-pie"
-              title="Despesas por Categoria"
-              isHidden={hiddenCards.has('chart-pie')}
-              onHide={() => hideCard('chart-pie')}
-              onShow={() => showCard('chart-pie')}
+              id="chart-bar"
+              title="Receitas vs. Despesas"
+              isHidden={hiddenCards.has('chart-bar')}
+              onHide={() => hideCard('chart-bar')}
+              onShow={() => showCard('chart-bar')}
               showControls={showHiddenCards}
             >
               <FinancialChart
-                data={pieData}
-                type="pie"
+                data={chartData}
+                type="bar"
+                title=""
+              />
+            </MovableCard>
+
+            {pieData.length > 0 && (
+              <MovableCard
+                id="chart-pie"
+                title="Despesas por Categoria"
+                isHidden={hiddenCards.has('chart-pie')}
+                onHide={() => hideCard('chart-pie')}
+                onShow={() => showCard('chart-pie')}
+                showControls={showHiddenCards}
+              >
+                <FinancialChart
+                  data={pieData}
+                  type="pie"
+                  title=""
+                  dataKey="value"
+                  nameKey="name"
+                />
+              </MovableCard>
+            )}
+          </div>
+        </div>
+
+        {/* Tendências Mensais */}
+        <div>
+          <h2 className={`text-xl md:text-2xl font-semibold mb-4 ${
+            theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+          }`}>
+            Tendências
+          </h2>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+            <MovableCard
+              id="evolucao-receitas"
+              title="Evolução das Receitas"
+              isHidden={hiddenCards.has('evolucao-receitas')}
+              onHide={() => hideCard('evolucao-receitas')}
+              onShow={() => showCard('evolucao-receitas')}
+              showControls={showHiddenCards}
+            >
+              <FinancialChart
+                data={[{ name: months[selectedMonth - 1], value: totalEntradas }]}
+                type="line"
                 title=""
                 dataKey="value"
                 nameKey="name"
               />
             </MovableCard>
-          )}
-        </div>
 
-        {/* Tendências Mensais */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-          <MovableCard
-            id="evolucao-receitas"
-            title="Evolução das Receitas"
-            isHidden={hiddenCards.has('evolucao-receitas')}
-            onHide={() => hideCard('evolucao-receitas')}
-            onShow={() => showCard('evolucao-receitas')}
-            showControls={showHiddenCards}
-          >
-            <FinancialChart
-              data={[{ name: months[selectedMonth - 1], value: totalEntradas }]}
-              type="line"
-              title="Tendência de Receitas"
-              dataKey="value"
-              nameKey="name"
-            />
-          </MovableCard>
-
-          <MovableCard
-            id="evolucao-despesas"
-            title="Evolução das Despesas"
-            isHidden={hiddenCards.has('evolucao-despesas')}
-            onHide={() => hideCard('evolucao-despesas')}
-            onShow={() => showCard('evolucao-despesas')}
-            showControls={showHiddenCards}
-          >
-            <FinancialChart
-              data={[{ name: months[selectedMonth - 1], value: totalSaidas }]}
-              type="line"
-              title="Tendência de Despesas"
-              dataKey="value"
-              nameKey="name"
-            />
-          </MovableCard>
+            <MovableCard
+              id="evolucao-despesas"
+              title="Evolução das Despesas"
+              isHidden={hiddenCards.has('evolucao-despesas')}
+              onHide={() => hideCard('evolucao-despesas')}
+              onShow={() => showCard('evolucao-despesas')}
+              showControls={showHiddenCards}
+            >
+              <FinancialChart
+                data={[{ name: months[selectedMonth - 1], value: totalSaidas }]}
+                type="line"
+                title=""
+                dataKey="value"
+                nameKey="name"
+              />
+            </MovableCard>
+          </div>
         </div>
       </div>
     </div>

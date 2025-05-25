@@ -24,21 +24,21 @@ import {
 interface FinancialChartProps {
   data: any[];
   type: 'bar' | 'pie' | 'line';
-  title: string;
+  title?: string;
   dataKey?: string;
   nameKey?: string;
   colors?: string[];
 }
 
 const defaultColors = [
-  '#FFD700', // Gold
-  '#1E90FF', // Blue
   '#FF6B6B', // Red
   '#4ECDC4', // Teal
   '#45B7D1', // Light blue
   '#96CEB4', // Light green
   '#FFEAA7', // Light yellow
   '#DDA0DD', // Plum
+  '#FFD93D', // Gold
+  '#6C5CE7', // Purple
 ];
 
 const FinancialChart: React.FC<FinancialChartProps> = ({
@@ -69,11 +69,57 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
   const textColor = theme === 'dark' ? '#e5e7eb' : '#374151';
   const gridColor = theme === 'dark' ? '#374151' : '#e5e7eb';
 
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className={`p-3 rounded-lg shadow-lg border ${
+          theme === 'dark' 
+            ? 'bg-gray-800 border-gray-600 text-white' 
+            : 'bg-white border-gray-300 text-gray-900'
+        }`}>
+          {label && (
+            <p className="font-medium mb-2">{label}</p>
+          )}
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color }}>
+              {`${entry.name || entry.dataKey}: R$ ${entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom legend component
+  const CustomLegend = ({ payload }: any) => {
+    if (!payload) return null;
+    
+    return (
+      <div className="flex flex-wrap justify-center gap-4 mt-4">
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center gap-2">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className={`text-sm ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              {entry.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   if (type === 'bar') {
     return (
       <div className={`p-4 md:p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
         theme === 'dark' 
-          ? 'bg-gray-800 border border-gray-700' 
+          ? 'bg-gray-900 border border-gray-700' 
           : 'bg-white border border-gray-200'
       }`}>
         {title && (
@@ -85,9 +131,9 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
             {title}
           </h3>
         )}
-        <div className="h-64 md:h-80 w-full">
+        <div className="h-80 md:h-96 w-full">
           <ChartContainer config={chartConfig}>
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
               <XAxis 
                 dataKey={nameKey}
@@ -99,11 +145,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                 tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
                 axisLine={{ stroke: gridColor }}
               />
-              <ChartTooltip 
-                content={<ChartTooltipContent />}
-                formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
-              />
-              <ChartLegend content={<ChartLegendContent />} />
+              <ChartTooltip content={<CustomTooltip />} />
               <Bar dataKey="entradas" fill="#4CAF50" radius={[4, 4, 0, 0]} name="Entradas" />
               <Bar dataKey="saidas" fill="#F44336" radius={[4, 4, 0, 0]} name="Saídas" />
             </BarChart>
@@ -117,7 +159,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
     return (
       <div className={`p-4 md:p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
         theme === 'dark' 
-          ? 'bg-gray-800 border border-gray-700' 
+          ? 'bg-gray-900 border border-gray-700' 
           : 'bg-white border border-gray-200'
       }`}>
         {title && (
@@ -129,17 +171,19 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
             {title}
           </h3>
         )}
-        <div className="h-64 md:h-80 w-full">
+        <div className="h-80 md:h-96 w-full">
           <ChartContainer config={chartConfig}>
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={80}
+                cy="40%"
+                innerRadius={60}
+                outerRadius={120}
                 paddingAngle={5}
                 dataKey={dataKey}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                labelLine={false}
               >
                 {data.map((entry, index) => (
                   <Cell 
@@ -148,13 +192,15 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                   />
                 ))}
               </Pie>
-              <ChartTooltip 
-                content={<ChartTooltipContent />}
-                formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
-              />
-              <ChartLegend content={<ChartLegendContent />} />
+              <ChartTooltip content={<CustomTooltip />} />
             </PieChart>
           </ChartContainer>
+          <CustomLegend 
+            payload={data.map((item, index) => ({
+              value: item[nameKey],
+              color: colors[index % colors.length]
+            }))}
+          />
         </div>
       </div>
     );
@@ -164,7 +210,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
     return (
       <div className={`p-4 md:p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
         theme === 'dark' 
-          ? 'bg-gray-800 border border-gray-700' 
+          ? 'bg-gray-900 border border-gray-700' 
           : 'bg-white border border-gray-200'
       }`}>
         {title && (
@@ -176,9 +222,9 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
             {title}
           </h3>
         )}
-        <div className="h-64 md:h-80 w-full">
+        <div className="h-80 md:h-96 w-full">
           <ChartContainer config={chartConfig}>
-            <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
               <XAxis 
                 dataKey={nameKey}
@@ -190,10 +236,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                 tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
                 axisLine={{ stroke: gridColor }}
               />
-              <ChartTooltip 
-                content={<ChartTooltipContent />}
-                formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
-              />
+              <ChartTooltip content={<CustomTooltip />} />
               <Line 
                 type="monotone" 
                 dataKey={dataKey} 
