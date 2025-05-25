@@ -34,39 +34,42 @@ const StatsCards: React.FC<StatsCardsProps> = ({
     title: string,
     value: number,
     icon: React.ElementType,
-    color: 'green' | 'red' | 'blue',
-    trend?: 'up' | 'down',
+    type: 'income' | 'expense' | 'balance',
     showToggle = false
   ) => {
-    const colorClasses = {
-      green: theme === 'dark' 
-        ? 'from-green-600 to-green-800 text-white' 
-        : 'from-green-500 to-green-700 text-white',
-      red: theme === 'dark'
-        ? 'from-red-600 to-red-800 text-white'
-        : 'from-red-500 to-red-700 text-white',
-      blue: saldo >= 0
-        ? (theme === 'dark' ? 'from-blue-600 to-blue-800 text-white' : 'from-blue-500 to-blue-700 text-white')
-        : (theme === 'dark' ? 'from-red-600 to-red-800 text-white' : 'from-red-500 to-red-700 text-white')
-    };
-
     const IconComponent = icon;
 
     return (
-      <div className={`p-6 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br ${colorClasses[color]}`}>
+      <div className={`p-6 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 border-2 ${
+        theme === 'dark' 
+          ? 'bg-gray-900 border-gray-700 hover:border-gold' 
+          : 'bg-white border-gray-200 hover:border-navy'
+      }`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-white/20">
-              <IconComponent className="h-6 w-6" />
+            <div className={`p-2 rounded-lg ${
+              theme === 'dark' ? 'bg-gold/20' : 'bg-navy/10'
+            }`}>
+              <IconComponent className={`h-6 w-6 ${
+                type === 'income' ? 'text-green-500' :
+                type === 'expense' ? 'text-red-500' :
+                theme === 'dark' ? 'text-gold' : 'text-navy'
+              }`} />
             </div>
-            <h3 className="text-lg font-semibold">{title}</h3>
+            <h3 className={`text-lg font-semibold ${
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>{title}</h3>
           </div>
           {showToggle && (
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleBalanceVisibility}
-              className="h-8 w-8 p-0 text-white hover:bg-white/20"
+              className={`h-8 w-8 p-0 ${
+                theme === 'dark' 
+                  ? 'text-gray-400 hover:text-gold hover:bg-gray-800' 
+                  : 'text-gray-600 hover:text-navy hover:bg-gray-100'
+              }`}
               aria-label={isBalanceVisible ? 'Ocultar saldo' : 'Mostrar saldo'}
             >
               {isBalanceVisible ? (
@@ -79,25 +82,39 @@ const StatsCards: React.FC<StatsCardsProps> = ({
         </div>
         
         <div className="space-y-2">
-          <p className="text-3xl font-bold">
+          <p className={`text-3xl font-bold ${
+            type === 'income' ? 'text-green-500' :
+            type === 'expense' ? 'text-red-500' :
+            saldo >= 0 ? 'text-green-500' : 'text-red-500'
+          }`}>
             {showToggle ? formatCurrency(value) : `R$ ${Math.abs(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           </p>
           <div className="flex items-center justify-between">
-            <span className="text-sm opacity-90">
+            <span className={`text-sm ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            }`}>
               {selectedMonth}
             </span>
-            {trend && (
-              <div className="flex items-center gap-1">
-                {trend === 'up' ? (
-                  <TrendingUp className="h-4 w-4" />
-                ) : (
-                  <TrendingDown className="h-4 w-4" />
-                )}
-                <span className="text-sm opacity-90">
-                  {trend === 'up' ? 'Positivo' : 'Negativo'}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-1">
+              {type === 'income' ? (
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              ) : type === 'expense' ? (
+                <TrendingDown className="h-4 w-4 text-red-500" />
+              ) : saldo >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-red-500" />
+              )}
+              <span className={`text-sm ${
+                type === 'income' ? 'text-green-500' :
+                type === 'expense' ? 'text-red-500' :
+                saldo >= 0 ? 'text-green-500' : 'text-red-500'
+              }`}>
+                {type === 'income' ? 'Positivo' :
+                 type === 'expense' ? 'Negativo' :
+                 saldo >= 0 ? 'Positivo' : 'Negativo'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -106,9 +123,9 @@ const StatsCards: React.FC<StatsCardsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-      {getStatCard('Total de Entradas', totalEntradas, TrendingUp, 'green', 'up')}
-      {getStatCard('Total de Saídas', totalSaidas, TrendingDown, 'red', 'down')}
-      {getStatCard('Saldo Atual', saldo, DollarSign, 'blue', saldo >= 0 ? 'up' : 'down', true)}
+      {getStatCard('Total de Entradas', totalEntradas, TrendingUp, 'income')}
+      {getStatCard('Total de Saídas', totalSaidas, TrendingDown, 'expense')}
+      {getStatCard('Saldo Atual', saldo, DollarSign, 'balance', true)}
     </div>
   );
 };

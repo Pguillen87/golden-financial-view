@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   ChartContainer,
   ChartTooltip,
@@ -28,17 +30,20 @@ interface FinancialChartProps {
   dataKey?: string;
   nameKey?: string;
   colors?: string[];
+  showToggle?: boolean;
+  incomeData?: any[];
+  expenseData?: any[];
 }
 
 const defaultColors = [
-  '#FF6B6B', // Red
-  '#4ECDC4', // Teal
-  '#45B7D1', // Light blue
-  '#96CEB4', // Light green
-  '#FFEAA7', // Light yellow
-  '#DDA0DD', // Plum
-  '#FFD93D', // Gold
-  '#6C5CE7', // Purple
+  '#22c55e', // Green
+  '#ef4444', // Red  
+  '#3b82f6', // Blue
+  '#f59e0b', // Amber
+  '#8b5cf6', // Violet
+  '#06b6d4', // Cyan
+  '#f97316', // Orange
+  '#84cc16', // Lime
 ];
 
 const FinancialChart: React.FC<FinancialChartProps> = ({
@@ -48,28 +53,33 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
   dataKey = 'value',
   nameKey = 'name',
   colors = defaultColors,
+  showToggle = false,
+  incomeData = [],
+  expenseData = [],
 }) => {
   const { theme } = useTheme();
+  const [showIncome, setShowIncome] = useState(true);
 
   const chartConfig = {
     value: {
       label: "Valor",
-      color: theme === 'dark' ? '#FFD700' : '#1E90FF',
+      color: theme === 'dark' ? '#FFD700' : '#1E3A8A',
     },
     entradas: {
       label: "Entradas",
-      color: '#4CAF50',
+      color: '#22c55e',
     },
     saidas: {
       label: "Saídas", 
-      color: '#F44336',
+      color: '#ef4444',
     },
   };
 
-  const textColor = theme === 'dark' ? '#e5e7eb' : '#374151';
+  const textColor = theme === 'dark' ? '#ffffff' : '#374151';
   const gridColor = theme === 'dark' ? '#374151' : '#e5e7eb';
 
-  // Custom tooltip component
+  const currentData = showToggle ? (showIncome ? incomeData : expenseData) : data;
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -79,10 +89,10 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
             : 'bg-white border-gray-300 text-gray-900'
         }`}>
           {label && (
-            <p className="font-medium mb-2">{label}</p>
+            <p className="font-medium mb-2 text-white">{label}</p>
           )}
           {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }}>
+            <p key={index} style={{ color: entry.color }} className="text-white">
               {`${entry.name || entry.dataKey}: R$ ${entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
             </p>
           ))}
@@ -92,7 +102,6 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
     return null;
   };
 
-  // Custom legend component
   const CustomLegend = ({ payload }: any) => {
     if (!payload) return null;
     
@@ -104,9 +113,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className={`text-sm ${
-              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-            }`}>
+            <span className="text-sm text-white">
               {entry.value}
             </span>
           </div>
@@ -117,23 +124,38 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
 
   if (type === 'bar') {
     return (
-      <div className={`p-4 md:p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
+      <div className={`p-6 rounded-2xl shadow-lg border-2 transition-colors duration-300 ${
         theme === 'dark' 
-          ? 'bg-gray-900 border border-gray-700' 
-          : 'bg-white border border-gray-200'
+          ? 'bg-gray-900 border-gray-700' 
+          : 'bg-white border-gray-200'
       }`}>
-        {title && (
-          <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
-            theme === 'dark' 
-              ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
-              : 'text-blue-900'
-          }`}>
-            {title}
-          </h3>
-        )}
-        <div className="h-80 md:h-96 w-full">
+        <div className="flex items-center justify-between mb-4">
+          {title && (
+            <h3 className={`text-lg font-semibold ${
+              theme === 'dark' ? 'text-gold' : 'text-navy'
+            }`}>
+              {title}
+            </h3>
+          )}
+          {showToggle && (
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="chart-toggle" className="text-sm text-gray-400">
+                Despesas
+              </Label>
+              <Switch
+                id="chart-toggle"
+                checked={showIncome}
+                onCheckedChange={setShowIncome}
+              />
+              <Label htmlFor="chart-toggle" className="text-sm text-green-500">
+                Receitas
+              </Label>
+            </div>
+          )}
+        </div>
+        <div className="h-80 w-full">
           <ChartContainer config={chartConfig}>
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+            <BarChart data={currentData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
               <XAxis 
                 dataKey={nameKey}
@@ -146,8 +168,19 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
                 axisLine={{ stroke: gridColor }}
               />
               <ChartTooltip content={<CustomTooltip />} />
-              <Bar dataKey="entradas" fill="#4CAF50" radius={[4, 4, 0, 0]} name="Entradas" />
-              <Bar dataKey="saidas" fill="#F44336" radius={[4, 4, 0, 0]} name="Saídas" />
+              {!showToggle ? (
+                <>
+                  <Bar dataKey="entradas" fill="#22c55e" radius={[4, 4, 0, 0]} name="Entradas" />
+                  <Bar dataKey="saidas" fill="#ef4444" radius={[4, 4, 0, 0]} name="Saídas" />
+                </>
+              ) : (
+                <Bar 
+                  dataKey={dataKey} 
+                  fill={showIncome ? "#22c55e" : "#ef4444"} 
+                  radius={[4, 4, 0, 0]} 
+                  name={showIncome ? "Receitas" : "Despesas"} 
+                />
+              )}
             </BarChart>
           </ChartContainer>
         </div>
@@ -157,35 +190,48 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
 
   if (type === 'pie') {
     return (
-      <div className={`p-4 md:p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
+      <div className={`p-6 rounded-2xl shadow-lg border-2 transition-colors duration-300 ${
         theme === 'dark' 
-          ? 'bg-gray-900 border border-gray-700' 
-          : 'bg-white border border-gray-200'
+          ? 'bg-gray-900 border-gray-700' 
+          : 'bg-white border-gray-200'
       }`}>
-        {title && (
-          <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
-            theme === 'dark' 
-              ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
-              : 'text-blue-900'
-          }`}>
-            {title}
-          </h3>
-        )}
-        <div className="h-80 md:h-96 w-full">
+        <div className="flex items-center justify-between mb-4">
+          {title && (
+            <h3 className={`text-lg font-semibold ${
+              theme === 'dark' ? 'text-gold' : 'text-navy'
+            }`}>
+              {title}
+            </h3>
+          )}
+          {showToggle && (
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="pie-toggle" className="text-sm text-gray-400">
+                Despesas
+              </Label>
+              <Switch
+                id="pie-toggle"
+                checked={showIncome}
+                onCheckedChange={setShowIncome}
+              />
+              <Label htmlFor="pie-toggle" className="text-sm text-green-500">
+                Receitas
+              </Label>
+            </div>
+          )}
+        </div>
+        <div className="h-80 w-full">
           <ChartContainer config={chartConfig}>
-            <PieChart>
+            <PieChart margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
               <Pie
-                data={data}
+                data={currentData}
                 cx="50%"
                 cy="40%"
-                innerRadius={60}
-                outerRadius={120}
-                paddingAngle={5}
+                innerRadius={50}
+                outerRadius={100}
+                paddingAngle={2}
                 dataKey={dataKey}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                labelLine={false}
               >
-                {data.map((entry, index) => (
+                {currentData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
                     fill={colors[index % colors.length]} 
@@ -196,57 +242,11 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
             </PieChart>
           </ChartContainer>
           <CustomLegend 
-            payload={data.map((item, index) => ({
+            payload={currentData.map((item, index) => ({
               value: item[nameKey],
               color: colors[index % colors.length]
             }))}
           />
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'line') {
-    return (
-      <div className={`p-4 md:p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
-        theme === 'dark' 
-          ? 'bg-gray-900 border border-gray-700' 
-          : 'bg-white border border-gray-200'
-      }`}>
-        {title && (
-          <h3 className={`text-lg md:text-xl font-semibold mb-4 ${
-            theme === 'dark' 
-              ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
-              : 'text-blue-900'
-          }`}>
-            {title}
-          </h3>
-        )}
-        <div className="h-80 md:h-96 w-full">
-          <ChartContainer config={chartConfig}>
-            <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
-              <XAxis 
-                dataKey={nameKey}
-                tick={{ fill: textColor, fontSize: 12 }}
-                axisLine={{ stroke: gridColor }}
-              />
-              <YAxis 
-                tick={{ fill: textColor, fontSize: 12 }}
-                tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
-                axisLine={{ stroke: gridColor }}
-              />
-              <ChartTooltip content={<CustomTooltip />} />
-              <Line 
-                type="monotone" 
-                dataKey={dataKey} 
-                stroke={theme === 'dark' ? '#FFD700' : '#1E90FF'} 
-                strokeWidth={3}
-                dot={{ fill: theme === 'dark' ? '#FFD700' : '#1E90FF', strokeWidth: 2, r: 6 }}
-                activeDot={{ r: 8, fill: theme === 'dark' ? '#FFD700' : '#1E90FF' }}
-              />
-            </LineChart>
-          </ChartContainer>
         </div>
       </div>
     );
