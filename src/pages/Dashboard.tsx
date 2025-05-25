@@ -1,17 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DateRange } from 'react-day-picker';
-import FinancialChart from '@/components/charts/FinancialChart';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import StatsCards from '@/components/dashboard/StatsCards';
-import MovableCard from '@/components/dashboard/MovableCard';
-import FilterCard from '@/components/dashboard/FilterCard';
-import RecentTransactions from '@/components/dashboard/RecentTransactions';
+import DashboardStats from '@/components/dashboard/DashboardStats';
+import RecentTransactionsSection from '@/components/dashboard/RecentTransactionsSection';
+import FiltersSection from '@/components/dashboard/FiltersSection';
+import ChartsSection from '@/components/dashboard/ChartsSection';
+import NavigationSection from '@/components/dashboard/NavigationSection';
 import FloatingActionButtons from '@/components/dashboard/FloatingActionButtons';
-import NavigationCard from '@/components/dashboard/NavigationCard';
 
 interface FinanceiroEntrada {
   id: number;
@@ -159,100 +159,39 @@ const Dashboard = () => {
       />
 
       <div className="p-4 md:p-6 space-y-6 md:space-y-8 pb-32">
-        {/* Cards de Estatísticas */}
-        <div>
-          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
-            Resumo Financeiro
-          </h2>
-          <StatsCards
-            totalEntradas={totalEntradas}
-            totalSaidas={totalSaidas}
-            saldo={saldo}
-            selectedMonth={months[selectedMonth - 1]}
-          />
-        </div>
+        <DashboardStats
+          totalEntradas={totalEntradas}
+          totalSaidas={totalSaidas}
+          saldo={saldo}
+          selectedMonth={months[selectedMonth - 1]}
+        />
 
-        {/* Lançamentos Recentes */}
-        <div>
-          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
-            Lançamentos Recentes
-          </h2>
-          <RecentTransactions transactions={recentTransactions} />
-        </div>
+        <RecentTransactionsSection transactions={recentTransactions} />
 
-        {/* Filtros */}
-        <MovableCard
-          id="filters"
-          title="Filtros de Período"
-          isHidden={hiddenCards.has('filters')}
-          onHide={() => hideCard('filters')}
-          onShow={() => showCard('filters')}
-          showControls={showHiddenCards}
-        >
-          <FilterCard
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            onMonthChange={setSelectedMonth}
-            onYearChange={setSelectedYear}
-            onDateRangeChange={setDateRange}
-          />
-        </MovableCard>
+        <FiltersSection
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          onMonthChange={setSelectedMonth}
+          onYearChange={setSelectedYear}
+          onDateRangeChange={setDateRange}
+          hiddenCards={hiddenCards}
+          onHideCard={hideCard}
+          onShowCard={showCard}
+          showHiddenCards={showHiddenCards}
+        />
 
-        {/* Gráficos */}
-        <div>
-          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
-            Análises Gráficas
-          </h2>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-            <MovableCard
-              id="chart-bar"
-              title="Receitas vs. Despesas"
-              isHidden={hiddenCards.has('chart-bar')}
-              onHide={() => hideCard('chart-bar')}
-              onShow={() => showCard('chart-bar')}
-              showControls={showHiddenCards}
-            >
-              <FinancialChart
-                data={chartData}
-                type="bar"
-                title=""
-              />
-            </MovableCard>
+        <ChartsSection
+          chartData={chartData}
+          pieData={pieData}
+          hiddenCards={hiddenCards}
+          onHideCard={hideCard}
+          onShowCard={showCard}
+          showHiddenCards={showHiddenCards}
+        />
 
-            {pieData.length > 0 && (
-              <MovableCard
-                id="chart-pie"
-                title="Despesas por Categoria"
-                isHidden={hiddenCards.has('chart-pie')}
-                onHide={() => hideCard('chart-pie')}
-                onShow={() => showCard('chart-pie')}
-                showControls={showHiddenCards}
-              >
-                <FinancialChart
-                  data={pieData}
-                  type="pie"
-                  title=""
-                  dataKey="value"
-                  nameKey="name"
-                  showToggle={true}
-                  incomeData={[]}
-                  expenseData={pieData}
-                />
-              </MovableCard>
-            )}
-          </div>
-        </div>
-
-        {/* Navegação Principal como último card */}
-        <div>
-          <h2 className="text-xl md:text-2xl font-semibold mb-4 text-[#FFD700]">
-            Gestão Financeira
-          </h2>
-          <NavigationCard />
-        </div>
+        <NavigationSection />
       </div>
 
-      {/* Botões Flutuantes */}
       <FloatingActionButtons />
     </div>
   );
