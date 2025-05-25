@@ -68,16 +68,24 @@ const CategoryManager: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Buscar categorias de entrada
+      console.log('Carregando categorias para cliente:', cliente.id);
+      
+      // Buscar categorias de entrada - REMOVIDO o filtro .eq('ativo', true)
       const { data: incomeData, error: incomeError } = await supabase
         .from('financeiro_categorias_entrada')
         .select('*')
         .eq('cliente_id', cliente.id)
-        .eq('ativo', true);
+        .order('nome');
 
       if (incomeError) {
         console.error('Erro ao buscar categorias de entrada:', incomeError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as categorias de receita.",
+          variant: "destructive",
+        });
       } else {
+        console.log('Categorias de entrada carregadas:', incomeData);
         const mappedIncomeCategories = incomeData?.map(cat => ({
           id: cat.id,
           name: cat.nome,
@@ -88,16 +96,22 @@ const CategoryManager: React.FC = () => {
         setIncomeCategories(mappedIncomeCategories);
       }
 
-      // Buscar categorias de saída
+      // Buscar categorias de saída - REMOVIDO o filtro .eq('ativo', true)
       const { data: expenseData, error: expenseError } = await supabase
         .from('financeiro_categorias_saida')
         .select('*')
         .eq('cliente_id', cliente.id)
-        .eq('ativo', true);
+        .order('nome');
 
       if (expenseError) {
         console.error('Erro ao buscar categorias de saída:', expenseError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as categorias de despesa.",
+          variant: "destructive",
+        });
       } else {
+        console.log('Categorias de saída carregadas:', expenseData);
         const mappedExpenseCategories = expenseData?.map(cat => ({
           id: cat.id,
           name: cat.nome,
@@ -147,20 +161,24 @@ const CategoryManager: React.FC = () => {
 
           // Atualizar estado local
           if (type === 'income') {
-            setIncomeCategories(prev => prev.filter(cat => cat.id !== id));
+            setIncomeCategories(prev => prev.map(cat => 
+              cat.id === id ? { ...cat, active: false } : cat
+            ));
           } else {
-            setExpenseCategories(prev => prev.filter(cat => cat.id !== id));
+            setExpenseCategories(prev => prev.map(cat => 
+              cat.id === id ? { ...cat, active: false } : cat
+            ));
           }
 
           toast({
             title: "Sucesso",
-            description: "Categoria excluída com sucesso.",
+            description: "Categoria desativada com sucesso.",
           });
         } catch (error) {
-          console.error('Erro ao excluir categoria:', error);
+          console.error('Erro ao desativar categoria:', error);
           toast({
             title: "Erro",
-            description: "Não foi possível excluir a categoria.",
+            description: "Não foi possível desativar a categoria.",
             variant: "destructive",
           });
         }
@@ -194,6 +212,11 @@ const CategoryManager: React.FC = () => {
           cat.id === id ? { ...cat, active: !cat.active } : cat
         ));
       }
+
+      toast({
+        title: "Sucesso",
+        description: `Categoria ${!category.active ? 'ativada' : 'desativada'} com sucesso.`,
+      });
     } catch (error) {
       console.error('Erro ao alterar status da categoria:', error);
       toast({
@@ -208,6 +231,7 @@ const CategoryManager: React.FC = () => {
     if (!cliente) return;
 
     try {
+      console.log('Salvando categoria:', categoryData, 'Tipo:', dialogType);
       const table = dialogType === 'income' ? 'financeiro_categorias_entrada' : 'financeiro_categorias_saida';
       
       if (editingCategory) {
@@ -224,7 +248,12 @@ const CategoryManager: React.FC = () => {
         if (error) throw error;
 
         // Atualizar estado local
-        const updatedCategory = { ...editingCategory, ...categoryData };
+        const updatedCategory = { 
+          ...editingCategory, 
+          name: categoryData.name,
+          description: categoryData.description,
+          color: categoryData.color
+        };
         if (dialogType === 'income') {
           setIncomeCategories(prev => prev.map(cat => 
             cat.id === editingCategory.id ? updatedCategory : cat
@@ -248,7 +277,12 @@ const CategoryManager: React.FC = () => {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao inserir categoria:', error);
+          throw error;
+        }
+
+        console.log('Categoria criada:', data);
 
         const newCategory = {
           id: data.id,
@@ -305,8 +339,8 @@ const CategoryManager: React.FC = () => {
       >
         {activeSubTab === 'analisar' && (
           <CategoryAnalytics 
-            incomeCategories={incomeCategories}
-            expenseCategories={expenseCategories}
+            incomeCategories={incomeCategories.filter(cat => cat.active)}
+            expenseCategories={expenseCategories.filter(cat => cat.active)}
           />
         )}
 
