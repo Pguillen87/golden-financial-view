@@ -241,7 +241,7 @@ export type Database = {
         Row: {
           ativo: boolean | null
           atualizado_em: string | null
-          auth_user_id: string | null
+          auth_user_id: string
           canal: string | null
           criado_em: string | null
           email: string | null
@@ -255,7 +255,7 @@ export type Database = {
         Insert: {
           ativo?: boolean | null
           atualizado_em?: string | null
-          auth_user_id?: string | null
+          auth_user_id: string
           canal?: string | null
           criado_em?: string | null
           email?: string | null
@@ -269,7 +269,7 @@ export type Database = {
         Update: {
           ativo?: boolean | null
           atualizado_em?: string | null
-          auth_user_id?: string | null
+          auth_user_id?: string
           canal?: string | null
           criado_em?: string | null
           email?: string | null

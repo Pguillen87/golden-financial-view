@@ -10,22 +10,29 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
 
 const Login = () => {
-  const [identifier, setIdentifier] = useState('');
-  const [senha, setSenha] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { signIn, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const success = await login(identifier, senha);
+    const result = await signIn(email, password);
     
-    if (success) {
+    if (result.success) {
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao sistema financeiro.",
@@ -34,7 +41,7 @@ const Login = () => {
     } else {
       toast({
         title: "Erro no login",
-        description: "Nome/email ou senha incorretos, ou conta inativa.",
+        description: result.error || "Erro ao fazer login. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -71,34 +78,34 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="identifier" className="text-lg font-medium">
-              Nome ou Email
+            <Label htmlFor="email" className="text-lg font-medium">
+              Email
             </Label>
             <Input
-              id="identifier"
-              type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className={`h-14 text-lg ${
                 theme === 'dark' 
                   ? 'bg-gray-800 border-yellow-400/30 text-yellow-400 focus:border-yellow-400' 
                   : 'bg-blue-50 border-blue-300 text-blue-900 focus:border-blue-500'
               }`}
-              placeholder="Digite seu nome ou email"
+              placeholder="Digite seu email"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="senha" className="text-lg font-medium">
+            <Label htmlFor="password" className="text-lg font-medium">
               Senha
             </Label>
             <div className="relative">
               <Input
-                id="senha"
+                id="password"
                 type={showPassword ? 'text' : 'password'}
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 className={`h-14 text-lg pr-12 ${
                   theme === 'dark' 

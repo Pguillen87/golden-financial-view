@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,49 +12,37 @@ import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
 const Cadastro = () => {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { signUp, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const { error } = await supabase
-        .from('financeiro_clientes')
-        .insert([
-          {
-            nome,
-            email: email || null,
-            senha,
-            ativo: false, // Conta inativa por padrão
-            criado_em: new Date().toISOString(),
-            atualizado_em: new Date().toISOString(),
-          }
-        ]);
+    const result = await signUp(email, password, nome);
 
-      if (error) {
-        toast({
-          title: "Erro no cadastro",
-          description: "Ocorreu um erro ao criar sua conta. Tente novamente.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Cadastro realizado com sucesso!",
-          description: "Sua conta foi criada e está aguardando ativação.",
-        });
-        navigate('/login');
-      }
-    } catch (error) {
-      console.error('Erro no cadastro:', error);
+    if (result.success) {
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Verifique seu email para confirmar a conta e depois faça login.",
+      });
+      navigate('/login');
+    } else {
       toast({
         title: "Erro no cadastro",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
+        description: result.error || "Erro ao criar conta. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -92,7 +80,7 @@ const Cadastro = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="nome" className="text-lg font-medium">
-              Nome *
+              Nome Completo *
             </Label>
             <Input
               id="nome"
@@ -111,39 +99,41 @@ const Cadastro = () => {
 
           <div className="space-y-2">
             <Label htmlFor="email" className="text-lg font-medium">
-              Email
+              Email *
             </Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
               className={`h-14 text-lg ${
                 theme === 'dark' 
                   ? 'bg-gray-800 border-yellow-400/30 text-yellow-400 focus:border-yellow-400' 
                   : 'bg-blue-50 border-blue-300 text-blue-900 focus:border-blue-500'
               }`}
-              placeholder="Digite seu email (opcional)"
+              placeholder="Digite seu email"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="senha" className="text-lg font-medium">
+            <Label htmlFor="password" className="text-lg font-medium">
               Senha *
             </Label>
             <div className="relative">
               <Input
-                id="senha"
+                id="password"
                 type={showPassword ? 'text' : 'password'}
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
                 className={`h-14 text-lg pr-12 ${
                   theme === 'dark' 
                     ? 'bg-gray-800 border-yellow-400/30 text-yellow-400 focus:border-yellow-400' 
                     : 'bg-blue-50 border-blue-300 text-blue-900 focus:border-blue-500'
                 }`}
-                placeholder="Digite sua senha"
+                placeholder="Digite sua senha (mínimo 6 caracteres)"
               />
               <Button
                 type="button"

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
@@ -25,7 +24,7 @@ interface FinanceiroSaida {
 }
 
 const Dashboard = () => {
-  const { cliente, logout } = useAuth();
+  const { cliente, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -84,8 +83,8 @@ const Dashboard = () => {
     setIsLoading(false);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
     toast({
       title: "Logout realizado",
@@ -103,7 +102,6 @@ const Dashboard = () => {
   ];
 
   if (!cliente) {
-    navigate('/login');
     return null;
   }
 
