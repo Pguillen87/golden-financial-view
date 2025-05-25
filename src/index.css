@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -186,4 +185,14 @@ body {
   right: 20px;
   background-color: #ef4444;
   color: white;
+}
+
+/* Ocultar scrollbar para tabs horizontais */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE e Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari e Opera */
 }

@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import CategoryManager from './CategoryManager';
 import GoalsManager from './GoalsManager';
@@ -9,78 +8,59 @@ import TransactionsManager from './TransactionsManager';
 const NavigationCard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('categorias');
 
+  const tabs = [
+    { id: 'categorias', label: 'Categorias' },
+    { id: 'metas', label: 'Metas' },
+    { id: 'lancamentos', label: 'Lançamentos' },
+  ];
+
   return (
     <Card className="bg-black border border-gray-800 rounded-lg overflow-hidden">
       <CardContent className="p-0">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Header com tabs minimalistas */}
-          <div className="bg-black border-b border-gray-800">
-            <TabsList className="h-12 w-full bg-transparent p-0 rounded-none justify-start overflow-x-auto">
-              <div className="flex min-w-full md:min-w-0 md:w-full">
-                <TabsTrigger 
-                  value="categorias" 
-                  className="
-                    relative flex-1 md:flex-none md:px-8 px-4 py-3 text-gray-400 
-                    bg-transparent border-0 rounded-none text-sm font-medium
-                    hover:text-gray-200 transition-colors
-                    data-[state=active]:text-[#FFD700] data-[state=active]:bg-transparent
-                    data-[state=active]:shadow-none
-                    after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5
-                    after:bg-transparent data-[state=active]:after:bg-[#FFD700]
-                    after:transition-colors after:duration-200
-                  "
+        {/* Header com tabs minimalistas */}
+        <div className="bg-black border-b border-gray-800">
+          <div className="flex w-full overflow-x-auto scrollbar-hide">
+            <div className="flex min-w-full md:min-w-0 md:w-full md:justify-center">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    relative py-3 px-6 text-sm font-medium whitespace-nowrap
+                    transition-colors duration-200 border-b-2
+                    ${activeTab === tab.id 
+                      ? 'text-[#FFD700] border-[#FFD700] font-semibold' 
+                      : 'text-gray-400 border-transparent hover:text-gray-200'
+                    }
+                  `}
                 >
-                  Categorias
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="metas" 
-                  className="
-                    relative flex-1 md:flex-none md:px-8 px-4 py-3 text-gray-400 
-                    bg-transparent border-0 rounded-none text-sm font-medium
-                    hover:text-gray-200 transition-colors
-                    data-[state=active]:text-[#FFD700] data-[state=active]:bg-transparent
-                    data-[state=active]:shadow-none
-                    after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5
-                    after:bg-transparent data-[state=active]:after:bg-[#FFD700]
-                    after:transition-colors after:duration-200
-                  "
-                >
-                  Metas
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="lancamentos" 
-                  className="
-                    relative flex-1 md:flex-none md:px-8 px-4 py-3 text-gray-400 
-                    bg-transparent border-0 rounded-none text-sm font-medium
-                    hover:text-gray-200 transition-colors
-                    data-[state=active]:text-[#FFD700] data-[state=active]:bg-transparent
-                    data-[state=active]:shadow-none
-                    after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5
-                    after:bg-transparent data-[state=active]:after:bg-[#FFD700]
-                    after:transition-colors after:duration-200
-                  "
-                >
-                  Lançamentos
-                </TabsTrigger>
-              </div>
-            </TabsList>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
+        </div>
 
-          {/* Conteúdo das tabs */}
-          <div className="p-6">
-            <TabsContent value="categorias" className="mt-0">
+        {/* Conteúdo das tabs */}
+        <div className="p-6">
+          {activeTab === 'categorias' && (
+            <div className="mt-0">
               <CategoryManager />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="metas" className="mt-0">
+          {activeTab === 'metas' && (
+            <div className="mt-0">
               <GoalsManager />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="lancamentos" className="mt-0">
+          {activeTab === 'lancamentos' && (
+            <div className="mt-0">
               <TransactionsManager />
-            </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
