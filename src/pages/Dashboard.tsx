@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LogOut, Sun, Moon, Calendar, Filter } from 'lucide-react';
+import { LogOut, Sun, Moon, Filter, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import FinancialChart from '@/components/charts/FinancialChart';
+import StatsCard from '@/components/charts/StatsCard';
 
 interface FinanceiroEntrada {
   id: number;
@@ -101,33 +104,69 @@ const Dashboard = () => {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
+  // Preparar dados para gráficos
+  const chartData = [
+    {
+      name: months[selectedMonth - 1],
+      entradas: totalEntradas,
+      saidas: totalSaidas,
+    }
+  ];
+
+  // Dados para gráfico de pizza (distribuição de saídas por categoria)
+  const saidasPorCategoria = saidas.reduce((acc, saida) => {
+    const categoria = `Categoria ${saida.categoria_id}`;
+    acc[categoria] = (acc[categoria] || 0) + Number(saida.valor);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const pieData = Object.entries(saidasPorCategoria).map(([categoria, valor]) => ({
+    name: categoria,
+    value: valor,
+  }));
+
+  // Dados para gráfico de linha (evolução do saldo)
+  const saldoData = [
+    { name: 'Saldo Atual', value: saldo },
+  ];
+
   if (!cliente) {
     return null;
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
+    <div className={`min-h-screen transition-all duration-500 ${
       theme === 'dark' 
-        ? 'bg-black text-yellow-400' 
-        : 'bg-gradient-to-br from-blue-50 to-white text-blue-900'
+        ? 'bg-gradient-to-br from-gray-900 via-black to-gray-800' 
+        : 'bg-gradient-to-br from-blue-50 via-white to-blue-100'
     }`}>
       {/* Header */}
-      <header className={`p-6 shadow-lg transition-colors duration-300 ${
+      <header className={`p-6 shadow-lg backdrop-blur-sm transition-all duration-300 ${
         theme === 'dark' 
-          ? 'bg-gray-900 border-b border-yellow-400/20' 
-          : 'bg-white border-b border-blue-200'
+          ? 'bg-gray-900/80 border-b border-yellow-400/20' 
+          : 'bg-white/80 border-b border-blue-200'
       }`}>
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Dashboard Financeiro</h1>
-            <p className="text-lg mt-1">Bem-vindo, {cliente.nome}!</p>
+            <h1 className={`text-4xl font-bold transition-colors duration-300 ${
+              theme === 'dark' 
+                ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+                : 'text-blue-900'
+            }`}>
+              Dashboard Financeiro
+            </h1>
+            <p className={`text-xl mt-2 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>
+              Bem-vindo, <span className={theme === 'dark' ? 'text-yellow-400' : 'text-blue-600'}>{cliente.nome}</span>!
+            </p>
           </div>
           <div className="flex items-center gap-4">
             <Button
               onClick={toggleTheme}
               variant="outline"
               size="icon"
-              className={`${
+              className={`transition-all duration-300 ${
                 theme === 'dark' 
                   ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' 
                   : 'border-blue-300 text-blue-600 hover:bg-blue-50'
@@ -138,7 +177,7 @@ const Dashboard = () => {
             <Button
               onClick={handleLogout}
               variant="outline"
-              className={`${
+              className={`transition-all duration-300 ${
                 theme === 'dark' 
                   ? 'border-red-400 text-red-400 hover:bg-red-400 hover:text-black' 
                   : 'border-red-300 text-red-600 hover:bg-red-50'
@@ -151,25 +190,31 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <div className="p-6">
+      <div className="p-6 space-y-8">
         {/* Filtros */}
-        <div className={`p-6 rounded-2xl shadow-lg mb-6 transition-colors duration-300 ${
+        <div className={`p-6 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
           theme === 'dark' 
-            ? 'bg-gray-900 border border-yellow-400/20' 
-            : 'bg-white border border-blue-200'
+            ? 'bg-gray-900/80 border border-yellow-400/20' 
+            : 'bg-white/80 border border-blue-200'
         }`}>
           <div className="flex items-center gap-4 mb-4">
-            <Filter className="h-6 w-6" />
-            <h2 className="text-xl font-semibold">Filtros</h2>
+            <Filter className={`h-6 w-6 ${theme === 'dark' ? 'text-yellow-400' : 'text-blue-600'}`} />
+            <h2 className={`text-xl font-semibold ${
+              theme === 'dark' 
+                ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+                : 'text-blue-900'
+            }`}>
+              Filtros
+            </h2>
           </div>
           <div className="flex gap-4">
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className={`p-3 rounded-lg text-lg ${
+              className={`p-3 rounded-xl text-lg transition-all duration-300 ${
                 theme === 'dark' 
-                  ? 'bg-gray-800 border-yellow-400/30 text-yellow-400' 
-                  : 'bg-blue-50 border-blue-300 text-blue-900'
+                  ? 'bg-gray-800 border-yellow-400/30 text-yellow-400 focus:border-yellow-400' 
+                  : 'bg-blue-50 border-blue-300 text-blue-900 focus:border-blue-500'
               }`}
             >
               {months.map((month, index) => (
@@ -179,10 +224,10 @@ const Dashboard = () => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className={`p-3 rounded-lg text-lg ${
+              className={`p-3 rounded-xl text-lg transition-all duration-300 ${
                 theme === 'dark' 
-                  ? 'bg-gray-800 border-yellow-400/30 text-yellow-400' 
-                  : 'bg-blue-50 border-blue-300 text-blue-900'
+                  ? 'bg-gray-800 border-yellow-400/30 text-yellow-400 focus:border-yellow-400' 
+                  : 'bg-blue-50 border-blue-300 text-blue-900 focus:border-blue-500'
               }`}
             >
               {[2023, 2024, 2025].map(year => (
@@ -192,125 +237,153 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Resumo Financeiro */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className={`p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
-            theme === 'dark' 
-              ? 'bg-gray-900 border border-green-400/20' 
-              : 'bg-green-50 border border-green-200'
-          }`}>
-            <h3 className={`text-xl font-semibold mb-2 ${
-              theme === 'dark' ? 'text-green-400' : 'text-green-700'
-            }`}>
-              Total de Entradas
-            </h3>
-            <p className={`text-3xl font-bold ${
-              theme === 'dark' ? 'text-green-400' : 'text-green-700'
-            }`}>
-              R$ {totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-
-          <div className={`p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
-            theme === 'dark' 
-              ? 'bg-gray-900 border border-red-400/20' 
-              : 'bg-red-50 border border-red-200'
-          }`}>
-            <h3 className={`text-xl font-semibold mb-2 ${
-              theme === 'dark' ? 'text-red-400' : 'text-red-700'
-            }`}>
-              Total de Saídas
-            </h3>
-            <p className={`text-3xl font-bold ${
-              theme === 'dark' ? 'text-red-400' : 'text-red-700'
-            }`}>
-              R$ {totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-
-          <div className={`p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
-            theme === 'dark' 
-              ? 'bg-gray-900 border border-blue-400/20' 
-              : 'bg-blue-50 border border-blue-200'
-          }`}>
-            <h3 className={`text-xl font-semibold mb-2 ${
-              theme === 'dark' ? 'text-blue-400' : 'text-blue-700'
-            }`}>
-              Saldo
-            </h3>
-            <p className={`text-3xl font-bold ${
-              saldo >= 0 
-                ? theme === 'dark' ? 'text-green-400' : 'text-green-700'
-                : theme === 'dark' ? 'text-red-400' : 'text-red-700'
-            }`}>
-              R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
+        {/* Cards de Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatsCard
+            title="Total de Entradas"
+            value={`R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            icon={TrendingUp}
+            color="green"
+          />
+          <StatsCard
+            title="Total de Saídas"
+            value={`R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            icon={TrendingDown}
+            color="red"
+          />
+          <StatsCard
+            title="Saldo"
+            value={`R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            changeType={saldo >= 0 ? 'positive' : 'negative'}
+            icon={DollarSign}
+            color={saldo >= 0 ? 'blue' : 'red'}
+          />
+          <StatsCard
+            title="Categorias Ativas"
+            value={Object.keys(saidasPorCategoria).length.toString()}
+            icon={PieChart}
+            color="yellow"
+          />
         </div>
 
-        {/* Listas de Transações */}
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <FinancialChart
+            data={chartData}
+            type="bar"
+            title="Entradas x Saídas"
+          />
+          {pieData.length > 0 && (
+            <FinancialChart
+              data={pieData}
+              type="pie"
+              title="Distribuição por Categoria"
+              dataKey="value"
+              nameKey="name"
+            />
+          )}
+        </div>
+
+        {/* Evolução do Saldo */}
+        <FinancialChart
+          data={saldoData}
+          type="line"
+          title="Evolução do Saldo"
+          dataKey="value"
+          nameKey="name"
+        />
+
+        {/* Transações Recentes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Entradas */}
-          <div className={`p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
+          <div className={`p-6 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
             theme === 'dark' 
-              ? 'bg-gray-900 border border-yellow-400/20' 
-              : 'bg-white border border-blue-200'
+              ? 'bg-gray-900/80 border border-yellow-400/20' 
+              : 'bg-white/80 border border-blue-200'
           }`}>
-            <h3 className="text-xl font-semibold mb-4">Últimas Entradas</h3>
+            <h3 className={`text-xl font-semibold mb-4 ${
+              theme === 'dark' 
+                ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+                : 'text-blue-900'
+            }`}>
+              Últimas Entradas
+            </h3>
             {isLoading ? (
-              <p>Carregando...</p>
+              <p className={`text-center py-8 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                Carregando...
+              </p>
             ) : entradas.length > 0 ? (
               <div className="space-y-3">
                 {entradas.slice(0, 5).map((entrada) => (
-                  <div key={entrada.id} className={`p-3 rounded-lg ${
-                    theme === 'dark' ? 'bg-gray-800' : 'bg-green-50'
+                  <div key={entrada.id} className={`p-4 rounded-xl transition-all duration-300 hover:scale-105 ${
+                    theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700' : 'bg-green-50 hover:bg-green-100'
                   }`}>
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">{entrada.descricao}</span>
+                      <span className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                        {entrada.descricao}
+                      </span>
                       <span className={`font-bold ${
                         theme === 'dark' ? 'text-green-400' : 'text-green-700'
                       }`}>
                         +R$ {Number(entrada.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
-                    <p className="text-sm opacity-70">{new Date(entrada.data).toLocaleDateString('pt-BR')}</p>
+                    <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {new Date(entrada.data).toLocaleDateString('pt-BR')}
+                    </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center py-8 opacity-70">Nenhuma entrada encontrada neste período.</p>
+              <p className={`text-center py-8 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                Nenhuma entrada encontrada neste período.
+              </p>
             )}
           </div>
 
           {/* Saídas */}
-          <div className={`p-6 rounded-2xl shadow-lg transition-colors duration-300 ${
+          <div className={`p-6 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
             theme === 'dark' 
-              ? 'bg-gray-900 border border-yellow-400/20' 
-              : 'bg-white border border-blue-200'
+              ? 'bg-gray-900/80 border border-yellow-400/20' 
+              : 'bg-white/80 border border-blue-200'
           }`}>
-            <h3 className="text-xl font-semibold mb-4">Últimas Saídas</h3>
+            <h3 className={`text-xl font-semibold mb-4 ${
+              theme === 'dark' 
+                ? 'bg-gradient-to-r from-yellow-400 to-blue-400 bg-clip-text text-transparent' 
+                : 'text-blue-900'
+            }`}>
+              Últimas Saídas
+            </h3>
             {isLoading ? (
-              <p>Carregando...</p>
+              <p className={`text-center py-8 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                Carregando...
+              </p>
             ) : saidas.length > 0 ? (
               <div className="space-y-3">
                 {saidas.slice(0, 5).map((saida) => (
-                  <div key={saida.id} className={`p-3 rounded-lg ${
-                    theme === 'dark' ? 'bg-gray-800' : 'bg-red-50'
+                  <div key={saida.id} className={`p-4 rounded-xl transition-all duration-300 hover:scale-105 ${
+                    theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700' : 'bg-red-50 hover:bg-red-100'
                   }`}>
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">{saida.descricao}</span>
+                      <span className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                        {saida.descricao}
+                      </span>
                       <span className={`font-bold ${
                         theme === 'dark' ? 'text-red-400' : 'text-red-700'
                       }`}>
                         -R$ {Number(saida.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
-                    <p className="text-sm opacity-70">{new Date(saida.data).toLocaleDateString('pt-BR')}</p>
+                    <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {new Date(saida.data).toLocaleDateString('pt-BR')}
+                    </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center py-8 opacity-70">Nenhuma saída encontrada neste período.</p>
+              <p className={`text-center py-8 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                Nenhuma saída encontrada neste período.
+              </p>
             )}
           </div>
         </div>
