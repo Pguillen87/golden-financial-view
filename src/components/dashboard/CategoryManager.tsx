@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import FinancialChart from '@/components/charts/FinancialChart';
 import CategoryFormDialog from './CategoryFormDialog';
 import CategoryToggleSwitch from './CategoryToggleSwitch';
+import ConfirmationDialog from '@/components/ui/confirmation-dialog';
 
 interface Category {
   id: number;
@@ -19,6 +20,17 @@ const CategoryManager: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'income' | 'expense'>('income');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {}
+  });
 
   const [incomeCategories, setIncomeCategories] = useState<Category[]>([
     { id: 1, name: 'Freelancer', active: true, color: '#22c55e', description: 'Trabalhos freelance' },
@@ -71,12 +83,20 @@ const CategoryManager: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteCategory = (id: number, type: 'income' | 'expense') => {
-    if (type === 'income') {
-      setIncomeCategories(prev => prev.filter(cat => cat.id !== id));
-    } else {
-      setExpenseCategories(prev => prev.filter(cat => cat.id !== id));
-    }
+  const handleDeleteCategory = (id: number, type: 'income' | 'expense', categoryName: string) => {
+    setConfirmationDialog({
+      isOpen: true,
+      title: 'Confirmar Exclusão',
+      description: `Tem certeza que deseja excluir a categoria "${categoryName}"? Esta ação não pode ser desfeita.`,
+      onConfirm: () => {
+        if (type === 'income') {
+          setIncomeCategories(prev => prev.filter(cat => cat.id !== id));
+        } else {
+          setExpenseCategories(prev => prev.filter(cat => cat.id !== id));
+        }
+        setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleToggleCategory = (id: number, type: 'income' | 'expense') => {
@@ -185,7 +205,7 @@ const CategoryManager: React.FC = () => {
               <Button 
                 size="sm" 
                 variant="ghost" 
-                onClick={() => handleDeleteCategory(category.id, type)}
+                onClick={() => handleDeleteCategory(category.id, type, category.name)}
                 className="text-red-400 hover:text-red-300 p-2 h-8 w-8 rounded-lg hover:bg-red-500/10"
               >
                 <Trash2 className="h-3 w-3" />
@@ -307,6 +327,16 @@ const CategoryManager: React.FC = () => {
         onSave={handleSaveCategory}
         type={dialogType}
         category={editingCategory}
+      />
+
+      <ConfirmationDialog
+        isOpen={confirmationDialog.isOpen}
+        onClose={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmationDialog.onConfirm}
+        title={confirmationDialog.title}
+        description={confirmationDialog.description}
+        confirmText="Excluir"
+        cancelText="Cancelar"
       />
     </div>
   );

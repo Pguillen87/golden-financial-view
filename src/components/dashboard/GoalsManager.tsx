@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Target, Edit, Trash2 } from 'lucide-react';
 import GoalFormDialog from './GoalFormDialog';
+import ConfirmationDialog from '@/components/ui/confirmation-dialog';
 
 interface Goal {
   id: number;
@@ -17,6 +18,18 @@ interface Goal {
 const GoalsManager: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {}
+  });
+
   const [goals, setGoals] = useState<Goal[]>([
     {
       id: 1,
@@ -69,8 +82,16 @@ const GoalsManager: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteGoal = (id: number) => {
-    setGoals(prev => prev.filter(goal => goal.id !== id));
+  const handleDeleteGoal = (id: number, goalName: string) => {
+    setConfirmationDialog({
+      isOpen: true,
+      title: 'Confirmar Exclusão',
+      description: `Tem certeza que deseja excluir a meta "${goalName}"? Esta ação não pode ser desfeita.`,
+      onConfirm: () => {
+        setGoals(prev => prev.filter(goal => goal.id !== id));
+        setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleSaveGoal = (goalData: any) => {
@@ -109,22 +130,22 @@ const GoalsManager: React.FC = () => {
       </div>
 
       {goals.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 max-h-72 overflow-y-auto">
+        <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
           {goals.map((goal) => {
             const progressPercentage = getProgressPercentage(goal.currentAmount, goal.targetAmount);
             
             return (
               <div 
                 key={goal.id} 
-                className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-[#FFD700] transition-all duration-300"
+                className="bg-gray-900 rounded-lg p-3 border border-gray-700 hover:border-[#FFD700] transition-all duration-300"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-[#1a365d] rounded-lg">
-                      <Target className="h-4 w-4 text-[#4299e1]" />
+                    <div className="p-1 bg-[#1a365d] rounded-lg">
+                      <Target className="h-3 w-3 text-[#4299e1]" />
                     </div>
                     <div>
-                      <h4 className="text-md font-semibold text-white">{goal.name}</h4>
+                      <h4 className="text-sm font-semibold text-white">{goal.name}</h4>
                       <p className="text-xs text-gray-400">{goal.category}</p>
                     </div>
                   </div>
@@ -141,7 +162,7 @@ const GoalsManager: React.FC = () => {
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      onClick={() => handleDeleteGoal(goal.id)}
+                      onClick={() => handleDeleteGoal(goal.id, goal.name)}
                       className="text-red-400 hover:text-red-300 p-1 h-6 w-6"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -149,7 +170,7 @@ const GoalsManager: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs text-gray-400">Progresso</span>
@@ -159,26 +180,26 @@ const GoalsManager: React.FC = () => {
                     </div>
                     <Progress 
                       value={progressPercentage} 
-                      className="h-2 bg-gray-700"
+                      className="h-1.5 bg-gray-700"
                     />
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
                     <div>
                       <p className="text-gray-400">Atual</p>
-                      <p className="text-sm font-semibold text-green-400">
+                      <p className="text-xs font-semibold text-green-400">
                         {formatCurrency(goal.currentAmount)}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-gray-400">Meta</p>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-xs font-semibold text-white">
                         {formatCurrency(goal.targetAmount)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="border-t border-gray-700 pt-2">
+                  <div className="border-t border-gray-700 pt-1">
                     <div className="flex justify-between items-center text-xs">
                       <p className="text-gray-400">Prazo: {formatDate(goal.deadline)}</p>
                       <p className="text-[#4299e1] font-medium">
@@ -192,13 +213,13 @@ const GoalsManager: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-gray-900 rounded-lg p-8 border border-gray-700 text-center">
+        <div className="bg-gray-900 rounded-lg p-6 border border-gray-700 text-center">
           <div className="flex justify-center mb-3">
             <div className="p-3 bg-gray-800 rounded-full">
-              <Target className="h-8 w-8 text-gray-600" />
+              <Target className="h-6 w-6 text-gray-600" />
             </div>
           </div>
-          <h4 className="text-md font-semibold text-white mb-1">
+          <h4 className="text-sm font-semibold text-white mb-1">
             Você ainda não cadastrou nenhuma meta.
           </h4>
           <p className="text-gray-400 mb-4 text-sm">
@@ -219,6 +240,16 @@ const GoalsManager: React.FC = () => {
         onClose={() => setIsDialogOpen(false)}
         onSave={handleSaveGoal}
         goal={editingGoal}
+      />
+
+      <ConfirmationDialog
+        isOpen={confirmationDialog.isOpen}
+        onClose={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmationDialog.onConfirm}
+        title={confirmationDialog.title}
+        description={confirmationDialog.description}
+        confirmText="Excluir"
+        cancelText="Cancelar"
       />
     </div>
   );
