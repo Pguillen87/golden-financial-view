@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Plus, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
@@ -15,6 +14,7 @@ interface Transaction {
   date: string;
   type: 'income' | 'expense';
   category: string;
+  categoria_id?: number;
 }
 
 interface TransactionsManagerProps {
@@ -122,7 +122,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         amount: Number(item.valor),
         date: item.data,
         type: 'income' as const,
-        category: item.financeiro_categorias_entrada?.nome || 'Sem categoria'
+        category: item.financeiro_categorias_entrada?.nome || 'Sem categoria',
+        categoria_id: item.categoria_id
       }));
 
       const expenseTransactions = (expenseData || []).map(item => ({
@@ -131,7 +132,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         amount: Number(item.valor),
         date: item.data,
         type: 'expense' as const,
-        category: item.financeiro_categorias_saida?.nome || 'Sem categoria'
+        category: item.financeiro_categorias_saida?.nome || 'Sem categoria',
+        categoria_id: item.categoria_id
       }));
 
       const allTransactions = [...incomeTransactions, ...expenseTransactions]

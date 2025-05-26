@@ -1,86 +1,205 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import FinancialChart from '@/components/charts/FinancialChart';
-
-interface Category {
-  id: number;
-  name: string;
-  active: boolean;
-  color: string;
-  description?: string;
-}
+import ChartLegendToggle from './ChartLegendToggle';
 
 interface CategoryAnalyticsProps {
-  incomeCategories: Category[];
-  expenseCategories: Category[];
+  selectedMonth?: number;
+  selectedYear?: number;
+  dateRange?: any;
 }
 
 const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
-  incomeCategories,
-  expenseCategories
+  selectedMonth,
+  selectedYear,
+  dateRange
 }) => {
-  const incomeData = incomeCategories.map(cat => ({
-    name: cat.name,
-    value: Math.random() * 5000 + 1000,
-    color: cat.color
-  }));
+  const { cliente } = useAuth();
+  const [incomeData, setIncomeData] = useState<any[]>([]);
+  const [expenseData, setExpenseData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showIncomeLegend, setShowIncomeLegend] = useState(true);
+  const [showExpenseLegend, setShowExpenseLegend] = useState(true);
 
-  const expenseData = expenseCategories.map(cat => ({
-    name: cat.name,
-    value: Math.random() * 3000 + 500,
-    color: cat.color
-  }));
+  useEffect(() => {
+    if (cliente) {
+      fetchCategoryData();
+    }
+  }, [cliente, selectedMonth, selectedYear, dateRange]);
+
+  const fetchCategoryData = async () => {
+    if (!cliente) return;
+
+    setIsLoading(true);
+    try {
+      let startDate: string;
+      let endDate: string;
+
+      if (dateRange?.from && dateRange?.to) {
+        startDate = dateRange.from.toISOString().split('T')[0];
+        endDate = dateRange.to.toISOString().split('T')[0];
+      } else if (selectedMonth && selectedYear) {
+        startDate = `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-01`;
+        const nextMonth = selectedMonth === 12 ? 1 : selectedMonth + 1;
+        const nextYear = selectedMonth === 12 ? selectedYear + 1 : selectedYear;
+        endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+      } else {
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
+        startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+        const nextMonth = month === 12 ? 1 : month + 1;
+        const nextYear = month === 12 ? year + 1 : year;
+        endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+      }
+
+      // Buscar dados de entrada
+      const { data: incomeResults, error: incomeError } = await supabase
+        .from('financeiro_entradas')
+        .select(`
+          valor,
+          financeiro_categorias_entrada(nome, cor)
+        `)
+        .eq('cliente_id', cliente.id)
+        .gte('data', startDate)
+        .lt('data', endDate);
+
+      // Buscar dados de saída
+      const { data: expenseResults, error: expenseError } = await supabase
+        .from('financeiro_saidas')
+        .select(`
+          valor,
+          financeiro_categorias_saida(nome, cor)
+        `)
+        .eq('cliente_id', cliente.id)
+        .gte('data', startDate)
+        .lt('data', endDate);
+
+      if (incomeError) console.error('Erro ao buscar entradas:', incomeError);
+      if (expenseError) console.error('Erro ao buscar saídas:', expenseError);
+
+      // Processar dados de entrada
+      const incomeByCategory = new Map();
+      incomeResults?.forEach(item => {
+        const categoryName = item.financeiro_categorias_entrada?.nome || 'Sem categoria';
+        const categoryColor = item.financeiro_categorias_entrada?.cor || '#22c55e';
+        const currentValue = incomeByCategory.get(categoryName) || { value: 0, color: categoryColor };
+        incomeByCategory.set(categoryName, {
+          value: currentValue.value + Number(item.valor),
+          color: categoryColor
+        });
+      });
+
+      // Processar dados de saída
+      const expenseByCategory = new Map();
+      expenseResults?.forEach(item => {
+        const categoryName = item.financeiro_categorias_saida?.nome || 'Sem categoria';
+        const categoryColor = item.financeiro_categorias_saida?.cor || '#ef4444';
+        const currentValue = expenseByCategory.get(categoryName) || { value: 0, color: categoryColor };
+        expenseByCategory.set(categoryName, {
+          value: currentValue.value + Number(item.valor),
+          color: categoryColor
+        });
+      });
+
+      // Converter para array para os gráficos
+      const incomeChartData = Array.from(incomeByCategory.entries()).map(([name, data]) => ({
+        name,
+        value: data.value,
+        fill: data.color
+      }));
+
+      const expenseChartData = Array.from(expenseByCategory.entries()).map(([name, data]) => ({
+        name,
+        value: data.value,
+        fill: data.color
+      }));
+
+      setIncomeData(incomeChartData);
+      setExpenseData(expenseChartData);
+    } catch (error) {
+      console.error('Erro ao carregar dados de categoria:', error);
+    }
+    setIsLoading(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="text-gray-400">Carregando análise por categorias...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm">
-      <h3 className="text-xl font-semibold text-[#FFD700] mb-2 bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
-        Análise por Categorias
-      </h3>
-      <p className="text-gray-400 mb-6 text-sm">
-        Distribuição de suas receitas e despesas por categoria.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl md:text-2xl font-semibold mb-2 text-[#FFD700]">
+          Análise por Categorias
+        </h2>
+        <p className="text-gray-400 text-sm mb-6">
+          Distribuição de suas receitas e despesas por categoria.
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <h4 className="text-lg font-semibold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-4">
-            Receitas por Categoria
-          </h4>
-          <div className="bg-black/20 rounded-2xl p-4 h-80 border border-gray-600/20">
+        {/* Gráfico de Receitas */}
+        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm relative">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-green-400">
+              Receitas por Categoria
+            </h3>
+            <ChartLegendToggle 
+              showLegend={showIncomeLegend}
+              onToggle={() => setShowIncomeLegend(!showIncomeLegend)}
+            />
+          </div>
+          
+          {incomeData.length > 0 ? (
             <FinancialChart
               data={incomeData}
               type="pie"
               title=""
               dataKey="value"
               nameKey="name"
-              showPercentage={true}
+              showLegend={showIncomeLegend}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-64 text-gray-400">
+              Nenhuma receita encontrada no período
+            </div>
+          )}
+        </div>
+
+        {/* Gráfico de Despesas */}
+        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm relative">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-red-400">
+              Despesas por Categoria
+            </h3>
+            <ChartLegendToggle 
+              showLegend={showExpenseLegend}
+              onToggle={() => setShowExpenseLegend(!showExpenseLegend)}
             />
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <h4 className="text-lg font-semibold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent mb-4">
-            Despesas por Categoria
-          </h4>
-          <div className="bg-black/20 rounded-2xl p-4 h-80 border border-gray-600/20">
+          
+          {expenseData.length > 0 ? (
             <FinancialChart
               data={expenseData}
               type="pie"
               title=""
               dataKey="value"
               nameKey="name"
-              showPercentage={true}
+              showLegend={showExpenseLegend}
             />
-          </div>
-        </motion.div>
+          ) : (
+            <div className="flex items-center justify-center h-64 text-gray-400">
+              Nenhuma despesa encontrada no período
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

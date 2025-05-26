@@ -1,62 +1,52 @@
 
-import React, { useState } from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
-import TransactionFormDialog from './TransactionFormDialog';
-import { useNavigation } from '@/contexts/NavigationContext';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const FloatingActionButtons: React.FC = () => {
-  const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
-  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
-  const { hideFloatingButtons } = useNavigation();
+interface FloatingActionButtonsProps {
+  onAddIncome: () => void;
+  onAddExpense: () => void;
+  isVisible?: boolean;
+}
 
-  const handleSaveTransaction = (transactionData: any) => {
-    console.log('Nova transação:', transactionData);
-    setIsIncomeDialogOpen(false);
-    setIsExpenseDialogOpen(false);
-  };
-
-  if (hideFloatingButtons) {
-    return null;
-  }
+const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = ({
+  onAddIncome,
+  onAddExpense,
+  isVisible = true
+}) => {
+  if (!isVisible) return null;
 
   return (
-    <>
-      <div className="fixed bottom-24 right-6 flex flex-col gap-3 z-50">
-        {/* Botão de Receita */}
-        <button
-          onClick={() => setIsIncomeDialogOpen(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
-          title="Adicionar Receita"
+    <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <Button
+          onClick={onAddIncome}
+          className="w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
+          title="Nova Receita"
         >
-          <TrendingUp className="h-5 w-5" />
-          <span className="text-sm font-medium">Receita</span>
-        </button>
+          <TrendingUp className="h-6 w-6" />
+        </Button>
+      </motion.div>
 
-        {/* Botão de Despesa */}
-        <button
-          onClick={() => setIsExpenseDialogOpen(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
-          title="Adicionar Despesa"
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Button
+          onClick={onAddExpense}
+          className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
+          title="Nova Despesa"
         >
-          <TrendingDown className="h-5 w-5" />
-          <span className="text-sm font-medium">Despesa</span>
-        </button>
-      </div>
-
-      <TransactionFormDialog
-        isOpen={isIncomeDialogOpen}
-        onClose={() => setIsIncomeDialogOpen(false)}
-        onSave={handleSaveTransaction}
-        type="income"
-      />
-
-      <TransactionFormDialog
-        isOpen={isExpenseDialogOpen}
-        onClose={() => setIsExpenseDialogOpen(false)}
-        onSave={handleSaveTransaction}
-        type="expense"
-      />
-    </>
+          <TrendingDown className="h-6 w-6" />
+        </Button>
+      </motion.div>
+    </div>
   );
 };
 

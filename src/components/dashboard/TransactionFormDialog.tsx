@@ -46,7 +46,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
         description: transaction.description || '',
         amount: transaction.amount?.toString() || '',
         date: transaction.date ? new Date(transaction.date) : new Date(),
-        category: transaction.category_id?.toString() || transaction.category || '',
+        category: transaction.categoria_id?.toString() || transaction.category_id?.toString() || '',
         type: transaction.type || type
       });
     } else {

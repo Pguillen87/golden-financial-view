@@ -31,7 +31,7 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
 }) => {
   const { cliente } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (cliente) {
@@ -65,8 +65,9 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
       }
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const displayPlaceholder = isLoading ? "Carregando..." : (categories.length === 0 ? "Nenhuma categoria encontrada" : placeholder);
@@ -102,7 +103,11 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
           <div className="px-2 py-1.5 text-sm text-gray-400">
             Nenhuma categoria encontrada
           </div>
-        ) : null}
+        ) : (
+          <div className="px-2 py-1.5 text-sm text-gray-400">
+            Carregando...
+          </div>
+        )}
       </SelectContent>
     </Select>
   );
