@@ -56,7 +56,13 @@ const CategoryList: React.FC<CategoryListProps> = ({
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <div className="space-y-3 max-h-full overflow-y-auto pr-2 custom-scrollbar">
+        <div 
+          className="space-y-3 max-h-full overflow-y-auto pr-2"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)',
+          }}
+        >
           {categories.map((category, index) => (
             <motion.div 
               key={category.id}
@@ -105,22 +111,24 @@ const CategoryList: React.FC<CategoryListProps> = ({
         </div>
       </div>
 
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.5);
-        }
-      `}</style>
+      <style>
+        {`
+          .space-y-3::-webkit-scrollbar {
+            width: 6px;
+          }
+          .space-y-3::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+          }
+          .space-y-3::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+          }
+          .space-y-3::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+          }
+        `}
+      </style>
     </motion.div>
   );
 };
