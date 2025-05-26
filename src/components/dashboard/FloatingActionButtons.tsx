@@ -1,17 +1,23 @@
 
 import React, { useState } from 'react';
-import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import TransactionFormDialog from './TransactionFormDialog';
+import { useNavigation } from '@/contexts/NavigationContext';
 
 const FloatingActionButtons: React.FC = () => {
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  const { hideFloatingButtons } = useNavigation();
 
   const handleSaveTransaction = (transactionData: any) => {
     console.log('Nova transação:', transactionData);
     setIsIncomeDialogOpen(false);
     setIsExpenseDialogOpen(false);
   };
+
+  if (hideFloatingButtons) {
+    return null;
+  }
 
   return (
     <>

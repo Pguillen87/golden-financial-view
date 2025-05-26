@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
-import CategoryToggleSwitch from './CategoryToggleSwitch';
+import CategoryToggleButton from './CategoryToggleButton';
 
 interface Category {
   id: number;
@@ -78,9 +78,9 @@ const CategoryList: React.FC<CategoryListProps> = ({
             </div>
             
             <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-              <CategoryToggleSwitch 
-                checked={category.active}
-                onCheckedChange={() => onToggleCategory(category.id, type)}
+              <CategoryToggleButton 
+                isActive={category.active}
+                onToggle={() => onToggleCategory(category.id, type)}
               />
               <Button 
                 size="sm" 

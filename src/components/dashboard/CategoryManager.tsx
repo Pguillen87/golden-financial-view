@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, Settings } from 'lucide-react';
 import SubTabs from './SubTabs';
 import CategoryManagerContent from './CategoryManagerContent';
@@ -7,6 +6,7 @@ import CategoryFormDialog from './CategoryFormDialog';
 import ConfirmationDialog from '@/components/ui/confirmation-dialog';
 import { useCategoryManager } from '@/hooks/useCategoryManager';
 import { useConfirmationDialog } from '@/hooks/useConfirmationDialog';
+import { useNavigation } from '@/contexts/NavigationContext';
 
 interface Category {
   id: number;
@@ -21,6 +21,7 @@ const CategoryManager: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'income' | 'expense'>('income');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const { setHideFloatingButtons } = useNavigation();
 
   const {
     isLoading,
@@ -32,6 +33,12 @@ const CategoryManager: React.FC = () => {
   } = useCategoryManager();
 
   const { confirmationDialog, openConfirmationDialog, closeConfirmationDialog } = useConfirmationDialog();
+
+  // Hide floating buttons when in category manager
+  useEffect(() => {
+    setHideFloatingButtons(true);
+    return () => setHideFloatingButtons(false);
+  }, [setHideFloatingButtons]);
 
   const subTabs = [
     {
