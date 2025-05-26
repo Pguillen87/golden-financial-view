@@ -48,12 +48,9 @@ const NavigationCards: React.FC<NavigationCardsProps> = ({
         {cards.map((card) => (
           <NavigationCard
             key={card.id}
-            title={card.title}
-            description={card.description}
-            icon={card.icon}
-            gradient={card.gradient}
-            onClick={() => onNavigate(card.id)}
-            isActive={card.isActive}
+            selectedMonth={undefined}
+            selectedYear={undefined}
+            dateRange={undefined}
           />
         ))}
       </div>

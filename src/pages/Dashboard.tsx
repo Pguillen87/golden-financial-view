@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
@@ -11,7 +10,6 @@ import RecentTransactionsSection from '@/components/dashboard/RecentTransactions
 import FiltersSection from '@/components/dashboard/FiltersSection';
 import ChartsSection from '@/components/dashboard/ChartsSection';
 import NavigationSection from '@/components/dashboard/NavigationSection';
-import FloatingActionButtons from '@/components/dashboard/FloatingActionButtons';
 
 interface FinanceiroEntrada {
   id: number;
@@ -195,8 +193,6 @@ const Dashboard = () => {
           dateRange={dateRange}
         />
       </div>
-
-      <FloatingActionButtons />
     </div>
   );
 };

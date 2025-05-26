@@ -40,10 +40,7 @@ const CategoryManagerContent: React.FC<CategoryManagerContentProps> = ({
       transition={{ duration: 0.3 }}
     >
       {activeSubTab === 'analisar' && (
-        <CategoryAnalytics 
-          incomeCategories={incomeCategories.filter(cat => cat.active)}
-          expenseCategories={expenseCategories.filter(cat => cat.active)}
-        />
+        <CategoryAnalytics />
       )}
 
       {activeSubTab === 'gerenciar' && (
