@@ -41,11 +41,12 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
 
   useEffect(() => {
     if (transaction) {
+      console.log('Loading transaction for edit:', transaction);
       setFormData({
         description: transaction.description || '',
         amount: transaction.amount?.toString() || '',
         date: transaction.date ? new Date(transaction.date) : new Date(),
-        category: transaction.category || '',
+        category: transaction.category_id?.toString() || transaction.category || '',
         type: transaction.type || type
       });
     } else {
@@ -62,15 +63,18 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.description.trim() && formData.amount && formData.date && formData.category) {
+      console.log('Submitting transaction data:', formData);
       onSave({
         ...formData,
         amount: parseFloat(formData.amount),
-        date: formData.date.toISOString().split('T')[0]
+        date: formData.date.toISOString().split('T')[0],
+        category_id: parseInt(formData.category)
       });
     }
   };
 
   const handleChange = (field: string, value: string | Date) => {
+    console.log(`Updating field ${field} with value:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

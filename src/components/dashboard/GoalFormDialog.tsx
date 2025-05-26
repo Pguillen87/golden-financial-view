@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import CategorySelect from './CategorySelect';
 
 interface GoalFormDialogProps {
   isOpen: boolean;
@@ -33,7 +34,8 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
     targetAmount: '',
     currentAmount: '',
     deadline: new Date(),
-    category: ''
+    category: '',
+    categoryType: 'expense' as 'income' | 'expense'
   });
 
   useEffect(() => {
@@ -43,7 +45,8 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
         targetAmount: goal.targetAmount?.toString() || '',
         currentAmount: goal.currentAmount?.toString() || '',
         deadline: goal.deadline ? new Date(goal.deadline) : new Date(),
-        category: goal.category || ''
+        category: goal.category || '',
+        categoryType: goal.categoryType || 'expense'
       });
     } else {
       setFormData({
@@ -51,7 +54,8 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
         targetAmount: '',
         currentAmount: '0',
         deadline: new Date(),
-        category: ''
+        category: '',
+        categoryType: 'expense'
       });
     }
   }, [goal, isOpen]);
@@ -95,14 +99,25 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
           </div>
 
           <div>
+            <Label htmlFor="categoryType" className="text-white">Tipo de Categoria</Label>
+            <select
+              id="categoryType"
+              value={formData.categoryType}
+              onChange={(e) => handleChange('categoryType', e.target.value as 'income' | 'expense')}
+              className="w-full bg-gray-800 border border-gray-600 text-white rounded-md px-3 py-2"
+            >
+              <option value="expense">Despesa</option>
+              <option value="income">Receita</option>
+            </select>
+          </div>
+
+          <div>
             <Label htmlFor="category" className="text-white">Categoria</Label>
-            <Input
-              id="category"
+            <CategorySelect
+              type={formData.categoryType}
               value={formData.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              placeholder="Ex: Poupança, Lazer"
-              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
-              required
+              onChange={(value) => handleChange('category', value)}
+              placeholder="Selecione uma categoria"
             />
           </div>
 

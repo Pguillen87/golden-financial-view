@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -74,16 +73,21 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+      <SelectTrigger className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 focus:bg-gray-700 focus:border-gray-500">
         <SelectValue placeholder={displayPlaceholder} />
       </SelectTrigger>
-      <SelectContent className="bg-gray-800 border-gray-600 text-white z-50">
+      <SelectContent 
+        className="bg-gray-800 border-gray-600 text-white z-50 max-h-60 overflow-y-auto" 
+        side="bottom"
+        sideOffset={4}
+        align="start"
+      >
         {categories.length > 0 ? (
           categories.map((category) => (
             <SelectItem 
               key={category.id} 
               value={category.id.toString()}
-              className="text-white hover:bg-gray-700 focus:bg-gray-700"
+              className="text-white hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <div 
