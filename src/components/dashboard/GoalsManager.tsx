@@ -57,7 +57,7 @@ const GoalsManager: React.FC = () => {
           financeiro_categorias_saida(nome, cor)
         `)
         .eq('cliente_id', cliente.id)
-        .order('prazo', { ascending: true });
+        .order('periodo_fim', { ascending: true });
 
       if (error) {
         console.error('Erro ao buscar metas:', error);
@@ -67,16 +67,21 @@ const GoalsManager: React.FC = () => {
           const incomeCategory = goal.financeiro_categorias_entrada;
           const expenseCategory = goal.financeiro_categorias_saida;
           
-          const categoryName = incomeCategory?.nome || expenseCategory?.nome || 'Sem categoria';
-          const categoryColor = incomeCategory?.cor || expenseCategory?.cor || '#6B7280';
+          // Fix: Access properties correctly from the category objects
+          const categoryName = (incomeCategory && Array.isArray(incomeCategory) ? incomeCategory[0]?.nome : incomeCategory?.nome) || 
+                              (expenseCategory && Array.isArray(expenseCategory) ? expenseCategory[0]?.nome : expenseCategory?.nome) || 
+                              'Sem categoria';
+          const categoryColor = (incomeCategory && Array.isArray(incomeCategory) ? incomeCategory[0]?.cor : incomeCategory?.cor) || 
+                               (expenseCategory && Array.isArray(expenseCategory) ? expenseCategory[0]?.cor : expenseCategory?.cor) || 
+                               '#6B7280';
           const goalType: 'income' | 'expense' = goal.categoria_id ? 'income' : 'expense';
 
           return {
             id: goal.id,
             name: goal.nome || 'Meta sem nome',
-            targetAmount: Number(goal.valor_meta),
+            targetAmount: Number(goal.valor_alvo), // Fix: Use correct field name
             currentAmount: Number(goal.valor_atual || 0),
-            deadline: goal.prazo,
+            deadline: goal.periodo_fim, // Fix: Use correct field name
             category: categoryName,
             categoryColor: categoryColor,
             type: goalType
@@ -158,14 +163,14 @@ const GoalsManager: React.FC = () => {
   const handleSaveGoal = async (goalData: any) => {
     try {
       if (editingGoal) {
-        // Editar meta existente
+        // Fix: Use correct field names for update
         const { error } = await supabase
           .from('financeiro_metas')
           .update({
             nome: goalData.name,
-            valor_meta: goalData.targetAmount,
+            valor_alvo: goalData.targetAmount, // Fix: Use correct field name
             valor_atual: goalData.currentAmount,
-            prazo: goalData.deadline,
+            periodo_fim: goalData.deadline, // Fix: Use correct field name
             categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
             categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
             tipo: goalData.type === 'income' ? 'receita' : 'economia'
@@ -174,15 +179,16 @@ const GoalsManager: React.FC = () => {
 
         if (error) throw error;
       } else {
-        // Criar nova meta
+        // Fix: Use correct field names for insert
         const { error } = await supabase
           .from('financeiro_metas')
           .insert({
             cliente_id: cliente?.id,
             nome: goalData.name,
-            valor_meta: goalData.targetAmount,
+            valor_alvo: goalData.targetAmount, // Fix: Use correct field name
             valor_atual: goalData.currentAmount,
-            prazo: goalData.deadline,
+            periodo_inicio: new Date().toISOString().split('T')[0], // Add required field
+            periodo_fim: goalData.deadline, // Fix: Use correct field name
             categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
             categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
             tipo: goalData.type === 'income' ? 'receita' : 'economia'
