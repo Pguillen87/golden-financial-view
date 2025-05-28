@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -70,12 +69,12 @@ const GoalsManager: React.FC = () => {
       } else {
         const formattedGoals = (goalsData || []).map(goal => {
           // Get category information based on goal type
-          const incomeCategory = goal.financeiro_categorias_entrada;
-          const expenseCategory = goal.financeiro_categorias_saida;
+          const incomeCategories = goal.financeiro_categorias_entrada as { nome: string; cor: string; }[] | null;
+          const expenseCategories = goal.financeiro_categorias_saida as { nome: string; cor: string; }[] | null;
           
-          // Determine category name and color
-          const categoryName = incomeCategory?.nome || expenseCategory?.nome || 'Sem categoria';
-          const categoryColor = incomeCategory?.cor || expenseCategory?.cor || '#6B7280';
+          // Determine category name and color - access first element of array
+          const categoryName = incomeCategories?.[0]?.nome || expenseCategories?.[0]?.nome || 'Sem categoria';
+          const categoryColor = incomeCategories?.[0]?.cor || expenseCategories?.[0]?.cor || '#6B7280';
           const goalType: 'income' | 'expense' = goal.categoria_id ? 'income' : 'expense';
 
           return {
