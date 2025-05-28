@@ -35,9 +35,8 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({
           showControls={showHiddenCards}
         >
           <FinancialChart
-            data={chartData}
+            chartData={chartData}
             type="bar"
-            title=""
           />
         </MovableCard>
 
@@ -51,14 +50,8 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({
             showControls={showHiddenCards}
           >
             <FinancialChart
-              data={pieData}
+              pieData={pieData}
               type="pie"
-              title=""
-              dataKey="value"
-              nameKey="name"
-              showToggle={true}
-              incomeData={[]}
-              expenseData={pieData}
             />
           </MovableCard>
         )}

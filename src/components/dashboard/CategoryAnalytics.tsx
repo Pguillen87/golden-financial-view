@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -159,11 +158,8 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
           
           {incomeData.length > 0 ? (
             <FinancialChart
-              data={incomeData}
+              pieData={incomeData}
               type="pie"
-              title=""
-              dataKey="value"
-              nameKey="name"
               showLegend={showIncomeLegend}
             />
           ) : (
@@ -187,11 +183,8 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
           
           {expenseData.length > 0 ? (
             <FinancialChart
-              data={expenseData}
+              pieData={expenseData}
               type="pie"
-              title=""
-              dataKey="value"
-              nameKey="name"
               showLegend={showExpenseLegend}
             />
           ) : (

@@ -13,18 +13,36 @@ interface ChartData {
 interface PieData {
   name: string;
   value: number;
+  fill?: string;
 }
 
 interface FinancialChartProps {
-  chartData: ChartData[];
-  pieData: PieData[];
+  chartData?: ChartData[];
+  pieData?: PieData[];
+  // Legacy props for backward compatibility
+  data?: any[];
+  type?: 'bar' | 'pie';
+  title?: string;
+  dataKey?: string;
+  nameKey?: string;
+  showLegend?: boolean;
+  showToggle?: boolean;
+  incomeData?: any[];
+  expenseData?: any[];
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-const FinancialChart: React.FC<FinancialChartProps> = ({ chartData, pieData }) => {
+const FinancialChart: React.FC<FinancialChartProps> = ({ 
+  chartData = [], 
+  pieData = [], 
+  data = [],
+  type = 'bar',
+  showLegend = true
+}) => {
   const [showEntradas, setShowEntradas] = useState(true);
   const [showSaidas, setShowSaidas] = useState(true);
+  const [showLegendToggle, setShowLegendToggle] = useState(showLegend);
 
   const toggleEntradas = () => setShowEntradas(!showEntradas);
   const toggleSaidas = () => setShowSaidas(!showSaidas);
@@ -81,11 +99,59 @@ const FinancialChart: React.FC<FinancialChartProps> = ({ chartData, pieData }) =
     );
   };
 
+  // Handle legacy data prop for backward compatibility
+  const actualChartData = chartData && chartData.length > 0 ? chartData : data || [];
+  const actualPieData = pieData && pieData.length > 0 ? pieData : data || [];
+
+  if (type === 'pie') {
+    return (
+      <div className="space-y-4">
+        {/* Legend Toggle */}
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowLegendToggle(!showLegendToggle)}
+            className="flex items-center gap-1 text-gray-400 hover:text-white"
+          >
+            {showLegendToggle ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+            Legenda
+          </Button>
+        </div>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={actualPieData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={renderCustomizedLabel}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {actualPieData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill || COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip content={customPieTooltip} />
+            {showLegendToggle && (
+              <Legend 
+                formatter={(value) => <span className="text-white">{value}</span>}
+              />
+            )}
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Bar Chart */}
-      <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-        <div className="flex justify-between items-center mb-4">
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-white">Receitas vs Despesas</h3>
           <div className="flex gap-2">
             <Button
@@ -109,7 +175,7 @@ const FinancialChart: React.FC<FinancialChartProps> = ({ chartData, pieData }) =
           </div>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
+          <BarChart data={actualChartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis dataKey="name" stroke="#9CA3AF" />
             <YAxis tickFormatter={formatCurrency} stroke="#9CA3AF" />
@@ -126,35 +192,6 @@ const FinancialChart: React.FC<FinancialChartProps> = ({ chartData, pieData }) =
           </BarChart>
         </ResponsiveContainer>
       </div>
-
-      {/* Pie Chart */}
-      {pieData.length > 0 && (
-        <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Despesas por Categoria</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={renderCustomizedLabel}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip content={customPieTooltip} />
-              <Legend 
-                formatter={(value) => <span className="text-white">{value}</span>}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      )}
     </div>
   );
 };

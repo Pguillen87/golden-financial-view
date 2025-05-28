@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Target, Edit, Trash2 } from 'lucide-react';
+import { Plus, Target, Edit, Trash2, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +15,7 @@ interface Goal {
   currentAmount: number;
   deadline: string;
   category: string;
-  categoryColor?: string;
+  categoryColor: string;
   type: 'income' | 'expense';
 }
 
@@ -50,7 +49,7 @@ const GoalsManager: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: goalsData, error } = await supabase
         .from('financeiro_metas')
         .select(`
           *,
@@ -58,41 +57,49 @@ const GoalsManager: React.FC = () => {
           financeiro_categorias_saida(nome, cor)
         `)
         .eq('cliente_id', cliente.id)
-        .order('criado_em', { ascending: false });
+        .order('prazo', { ascending: true });
 
       if (error) {
         console.error('Erro ao buscar metas:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar as metas.",
-          variant: "destructive",
-        });
       } else {
-        const mappedGoals = data?.map(meta => ({
-          id: meta.id,
-          name: meta.nome || 'Meta sem nome',
-          targetAmount: Number(meta.valor_alvo) || 0,
-          currentAmount: Number(meta.valor_atual) || 0,
-          deadline: meta.periodo_fim,
-          category: meta.financeiro_categorias_entrada?.nome || meta.financeiro_categorias_saida?.nome || 'Sem categoria',
-          categoryColor: meta.financeiro_categorias_entrada?.cor || meta.financeiro_categorias_saida?.cor || '#666',
-          type: meta.categoria_id ? 'income' : 'expense'
-        })) || [];
-        setGoals(mappedGoals);
+        const formattedGoals = (goalsData || []).map(goal => {
+          // Handle the join results properly
+          const incomeCategory = goal.financeiro_categorias_entrada;
+          const expenseCategory = goal.financeiro_categorias_saida;
+          
+          const categoryName = incomeCategory?.nome || expenseCategory?.nome || 'Sem categoria';
+          const categoryColor = incomeCategory?.cor || expenseCategory?.cor || '#6B7280';
+          const goalType: 'income' | 'expense' = goal.categoria_id ? 'income' : 'expense';
+
+          return {
+            id: goal.id,
+            name: goal.nome || 'Meta sem nome',
+            targetAmount: Number(goal.valor_meta),
+            currentAmount: Number(goal.valor_atual || 0),
+            deadline: goal.prazo,
+            category: categoryName,
+            categoryColor: categoryColor,
+            type: goalType
+          };
+        });
+
+        setGoals(formattedGoals);
       }
     } catch (error) {
       console.error('Erro ao carregar metas:', error);
       toast({
         title: "Erro",
-        description: "Erro inesperado ao carregar metas.",
+        description: "Não foi possível carregar as metas.",
         variant: "destructive",
       });
     }
     setIsLoading(false);
   };
 
-  const getProgressPercentage = (current: number, target: number) => {
-    return Math.min((current / target) * 100, 100);
+  const getProgressColor = (progress: number) => {
+    if (progress >= 75) return 'text-green-400';
+    if (progress >= 50) return 'text-yellow-400';
+    return 'text-red-400';
   };
 
   const formatCurrency = (amount: number) => {
@@ -156,9 +163,9 @@ const GoalsManager: React.FC = () => {
           .from('financeiro_metas')
           .update({
             nome: goalData.name,
-            valor_alvo: goalData.targetAmount,
+            valor_meta: goalData.targetAmount,
             valor_atual: goalData.currentAmount,
-            periodo_fim: goalData.deadline,
+            prazo: goalData.deadline,
             categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
             categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
             tipo: goalData.type === 'income' ? 'receita' : 'economia'
@@ -173,10 +180,9 @@ const GoalsManager: React.FC = () => {
           .insert({
             cliente_id: cliente?.id,
             nome: goalData.name,
-            valor_alvo: goalData.targetAmount,
+            valor_meta: goalData.targetAmount,
             valor_atual: goalData.currentAmount,
-            periodo_inicio: new Date().toISOString().split('T')[0],
-            periodo_fim: goalData.deadline,
+            prazo: goalData.deadline,
             categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
             categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
             tipo: goalData.type === 'income' ? 'receita' : 'economia'
@@ -214,132 +220,113 @@ const GoalsManager: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold text-[#FFD700] mb-1">
-            Suas Metas Financeiras
+            Gerenciar Metas
           </h3>
           <p className="text-gray-400 text-sm">
-            Acompanhe o progresso para alcançar seus objetivos.
+            Defina e acompanhe suas metas financeiras.
           </p>
         </div>
         <Button 
           onClick={handleAddGoal}
           className="bg-[#FFD700] hover:bg-[#E6C200] text-black"
         >
-          <Plus className="h-3 w-3 mr-1" />
+          <Plus className="h-4 w-4 mr-2" />
           Nova Meta
         </Button>
       </div>
 
-      {goals.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 max-h-80 overflow-y-auto">
-          {goals.map((goal) => {
-            const progressPercentage = getProgressPercentage(goal.currentAmount, goal.targetAmount);
-            
-            return (
-              <div 
-                key={goal.id} 
-                className="bg-gray-900 rounded-lg p-3 border border-gray-700 hover:border-[#FFD700] transition-all duration-300 min-w-0"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="p-1 bg-[#1a365d] rounded-lg flex-shrink-0">
-                      <Target className="h-3 w-3 text-[#4299e1]" />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="text-sm font-semibold text-white truncate">{goal.name}</h4>
-                      <div className="flex items-center gap-1">
-                        <div 
-                          className="w-2 h-2 rounded-full" 
-                          style={{ backgroundColor: goal.categoryColor }}
-                        />
-                        <p className="text-xs text-gray-400 truncate">{goal.category}</p>
-                      </div>
-                    </div>
+      {/* Goals List */}
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {isLoading ? (
+          <p className="text-center py-6 text-gray-400 text-sm">
+            Carregando metas...
+          </p>
+        ) : goals.length > 0 ? goals.map((goal) => {
+          const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
+          const progressColor = getProgressColor(progress);
+          
+          return (
+            <div key={goal.id} className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: goal.categoryColor }}
+                    />
+                    <h4 className="font-medium text-white text-sm">{goal.name}</h4>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      goal.type === 'income' 
+                        ? 'bg-green-900 text-green-300' 
+                        : 'bg-red-900 text-red-300'
+                    }`}>
+                      {goal.type === 'income' ? 'Receita' : 'Despesa'}
+                    </span>
                   </div>
                   
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => handleEditGoal(goal)}
-                      className="text-gray-400 hover:text-white p-1 h-6 w-6"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => handleDeleteGoal(goal.id, goal.name)}
-                      className="text-red-400 hover:text-red-300 p-1 h-6 w-6"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                  <div className="flex items-center gap-3 text-xs text-gray-400 mb-2">
+                    <div className="flex items-center gap-1">
+                      <Target className="h-2.5 w-2.5" />
+                      <span>{goal.category}</span>
+                    </div>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-2.5 w-2.5" />
+                      <span>até {formatDate(goal.deadline)}</span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs text-gray-400">Progresso</span>
-                      <span className="text-xs font-semibold text-[#FFD700]">
-                        {progressPercentage.toFixed(1)}%
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">
+                        {formatCurrency(goal.currentAmount)} de {formatCurrency(goal.targetAmount)}
+                      </span>
+                      <span className={`font-medium ${progressColor}`}>
+                        {progress.toFixed(1)}%
                       </span>
                     </div>
-                    <Progress 
-                      value={progressPercentage} 
-                      className="h-1.5 bg-gray-700"
-                    />
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="min-w-0">
-                      <p className="text-gray-400">Atual</p>
-                      <p className="text-xs font-semibold text-green-400 truncate">
-                        {formatCurrency(goal.currentAmount)}
-                      </p>
-                    </div>
-                    <div className="text-right min-w-0">
-                      <p className="text-gray-400">Meta</p>
-                      <p className="text-xs font-semibold text-white truncate">
-                        {formatCurrency(goal.targetAmount)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-700 pt-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <p className="text-gray-400 truncate">Prazo: {formatDate(goal.deadline)}</p>
-                      <p className="text-[#4299e1] font-medium truncate">
-                        Faltam: {formatCurrency(goal.targetAmount - goal.currentAmount)}
-                      </p>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300`}
+                        style={{ 
+                          width: `${Math.min(progress, 100)}%`,
+                          backgroundColor: progressColor === 'text-green-400' ? '#22c55e' : 
+                                         progressColor === 'text-yellow-400' ? '#eab308' : '#ef4444'
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
+                
+                <div className="flex items-center gap-1 ml-3">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleEditGoal(goal)}
+                    className="text-gray-400 hover:text-white p-1 h-6 w-6"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => handleDeleteGoal(goal.id, goal.name)}
+                    className="text-red-400 hover:text-red-300 p-1 h-6 w-6"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="bg-gray-900 rounded-lg p-6 border border-gray-700 text-center">
-          <div className="flex justify-center mb-3">
-            <div className="p-3 bg-gray-800 rounded-full">
-              <Target className="h-6 w-6 text-gray-600" />
             </div>
+          );
+        }) : (
+          <div className="text-center py-8 text-gray-400">
+            <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p className="text-sm">Nenhuma meta encontrada</p>
+            <p className="text-xs mt-1">Comece criando sua primeira meta financeira</p>
           </div>
-          <h4 className="text-sm font-semibold text-white mb-1">
-            Você ainda não cadastrou nenhuma meta.
-          </h4>
-          <p className="text-gray-400 mb-4 text-sm">
-            Clique em "Nova Meta" para começar!
-          </p>
-          <Button 
-            onClick={handleAddGoal}
-            className="bg-[#FFD700] hover:bg-[#E6C200] text-black"
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Nova Meta
-          </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       <GoalFormDialog
         isOpen={isDialogOpen}
