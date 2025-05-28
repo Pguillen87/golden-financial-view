@@ -68,12 +68,8 @@ const GoalsManager: React.FC = () => {
           const expenseCategory = goal.financeiro_categorias_saida;
           
           // Fix: Access properties correctly from the category objects
-          const categoryName = (incomeCategory && Array.isArray(incomeCategory) ? incomeCategory[0]?.nome : incomeCategory?.nome) || 
-                              (expenseCategory && Array.isArray(expenseCategory) ? expenseCategory[0]?.nome : expenseCategory?.nome) || 
-                              'Sem categoria';
-          const categoryColor = (incomeCategory && Array.isArray(incomeCategory) ? incomeCategory[0]?.cor : incomeCategory?.cor) || 
-                               (expenseCategory && Array.isArray(expenseCategory) ? expenseCategory[0]?.cor : expenseCategory?.cor) || 
-                               '#6B7280';
+          const categoryName = incomeCategory?.nome || expenseCategory?.nome || 'Sem categoria';
+          const categoryColor = incomeCategory?.cor || expenseCategory?.cor || '#6B7280';
           const goalType: 'income' | 'expense' = goal.categoria_id ? 'income' : 'expense';
 
           return {
