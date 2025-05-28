@@ -137,7 +137,6 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
               value={formData.category_id}
               onChange={(value) => handleChange('category_id', value)}
               placeholder="Selecione uma categoria"
-              required
             />
           </div>
 
