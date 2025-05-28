@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,14 +40,14 @@ export const useGoals = () => {
           variant: "destructive",
         });
       } else {
-        const formattedGoals = (goalsData || []).map(goal => {
-          // Get category information based on goal type - handle as arrays from Supabase joins
-          const incomeCategories = goal.financeiro_categorias_entrada as { nome: string; cor: string; }[] | null;
-          const expenseCategories = goal.financeiro_categorias_saida as { nome: string; cor: string; }[] | null;
+        const formattedGoals = goalsData?.map(goal => {
+          // Supabase sempre retorna joins como arrays, acesse o primeiro elemento com ?.[0]
+          const categoria_entrada = goal.financeiro_categorias_entrada?.[0] || null;
+          const categoria_saida = goal.financeiro_categorias_saida?.[0] || null;
           
-          // Determine category name and color - access first element of array if it exists
-          const categoryName = incomeCategories?.[0]?.nome || expenseCategories?.[0]?.nome || 'Sem categoria';
-          const categoryColor = incomeCategories?.[0]?.cor || expenseCategories?.[0]?.cor || '#6B7280';
+          // Determine category name and color
+          const categoryName = categoria_entrada?.nome || categoria_saida?.nome || 'Sem categoria';
+          const categoryColor = categoria_entrada?.cor || categoria_saida?.cor || '#6B7280';
           const goalType: 'income' | 'expense' = goal.categoria_id ? 'income' : 'expense';
 
           return {
@@ -59,7 +60,7 @@ export const useGoals = () => {
             categoryColor: categoryColor,
             type: goalType
           };
-        });
+        }) || [];
 
         setGoals(formattedGoals);
       }
