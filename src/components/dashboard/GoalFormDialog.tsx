@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, Check } from 'lucide-react';
+import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from '@/components/ui/command';
 import {
   Select,
   SelectContent,
@@ -58,6 +59,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
   });
   const [categories, setCategories] = useState<any[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [tempDate, setTempDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
@@ -143,6 +145,8 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
     setIsCalendarOpen(false);
   };
 
+  const selectedCategory = categories.find(cat => cat.id.toString() === formData.category);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border border-gray-700 text-white max-w-md">
@@ -184,28 +188,72 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
 
           <div>
             <Label htmlFor="category" className="text-white">Categoria</Label>
-            <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
-              <SelectTrigger className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
-                <SelectValue placeholder="Selecione uma categoria" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600 text-white z-50" side="bottom" align="start">
-                {categories.map((category) => (
-                  <SelectItem 
-                    key={category.id} 
-                    value={category.id.toString()}
-                    className="text-white hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-                  >
+            <Popover open={isCategoryOpen} onOpenChange={setIsCategoryOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={isCategoryOpen}
+                  className="w-full justify-between bg-gray-800 border-gray-600 text-white hover:bg-gray-700 focus:bg-gray-700 focus:border-gray-500"
+                >
+                  {selectedCategory ? (
                     <div className="flex items-center gap-2">
                       <div 
                         className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: category.cor || '#666' }}
+                        style={{ backgroundColor: selectedCategory.cor || '#666' }}
                       />
-                      {category.nome}
+                      {selectedCategory.nome}
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  ) : (
+                    <span className="text-gray-400">Selecione uma categoria</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-full p-0 bg-gray-800 border-gray-600" 
+                align="start"
+                side="bottom"
+                sideOffset={4}
+              >
+                <Command className="bg-gray-800">
+                  <CommandInput 
+                    placeholder="Buscar categoria..." 
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                  <CommandList className="max-h-60">
+                    <CommandEmpty className="text-gray-400 text-sm py-6 text-center">
+                      Nenhuma categoria encontrada
+                    </CommandEmpty>
+                    {categories.map((category) => (
+                      <CommandItem
+                        key={category.id}
+                        value={category.nome}
+                        onSelect={() => {
+                          handleChange('category', category.id.toString());
+                          setIsCategoryOpen(false);
+                        }}
+                        className="text-white hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            formData.category === category.id.toString() ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category.cor || '#666' }}
+                          />
+                          {category.nome}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -2,13 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Category {
   id: number;
@@ -32,6 +30,7 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
   const { cliente } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (cliente) {
@@ -70,46 +69,77 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
     }
   };
 
-  const displayPlaceholder = isLoading ? "Carregando..." : (categories.length === 0 ? "Nenhuma categoria encontrada" : placeholder);
+  const selectedCategory = categories.find(cat => cat.id.toString() === value);
 
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 focus:bg-gray-700 focus:border-gray-500">
-        <SelectValue placeholder={displayPlaceholder} />
-      </SelectTrigger>
-      <SelectContent 
-        className="bg-gray-800 border-gray-600 text-white z-50 max-h-60 overflow-y-auto" 
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between bg-gray-800 border-gray-600 text-white hover:bg-gray-700 focus:bg-gray-700 focus:border-gray-500"
+        >
+          {selectedCategory ? (
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: selectedCategory.color }}
+              />
+              {selectedCategory.name}
+            </div>
+          ) : (
+            <span className="text-gray-400">
+              {isLoading ? "Carregando..." : placeholder}
+            </span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent 
+        className="w-full p-0 bg-gray-800 border-gray-600" 
+        align="start"
         side="bottom"
         sideOffset={4}
-        align="start"
       >
-        {categories.length > 0 ? (
-          categories.map((category) => (
-            <SelectItem 
-              key={category.id} 
-              value={category.id.toString()}
-              className="text-white hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: category.color }}
+        <Command className="bg-gray-800">
+          <CommandInput 
+            placeholder="Buscar categoria..." 
+            className="bg-gray-800 border-gray-600 text-white"
+          />
+          <CommandList className="max-h-60">
+            <CommandEmpty className="text-gray-400 text-sm py-6 text-center">
+              {categories.length === 0 && !isLoading ? "Nenhuma categoria encontrada" : "Carregando..."}
+            </CommandEmpty>
+            {categories.map((category) => (
+              <CommandItem
+                key={category.id}
+                value={category.name}
+                onSelect={() => {
+                  onChange(category.id.toString());
+                  setOpen(false);
+                }}
+                className="text-white hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === category.id.toString() ? "opacity-100" : "opacity-0"
+                  )}
                 />
-                {category.name}
-              </div>
-            </SelectItem>
-          ))
-        ) : !isLoading ? (
-          <div className="px-2 py-1.5 text-sm text-gray-400">
-            Nenhuma categoria encontrada
-          </div>
-        ) : (
-          <div className="px-2 py-1.5 text-sm text-gray-400">
-            Carregando...
-          </div>
-        )}
-      </SelectContent>
-    </Select>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: category.color }}
+                  />
+                  {category.name}
+                </div>
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };
 

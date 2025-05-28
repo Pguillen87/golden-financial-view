@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -61,13 +62,18 @@ const GoalsManager: React.FC = () => {
 
       if (error) {
         console.error('Erro ao buscar metas:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as metas.",
+          variant: "destructive",
+        });
       } else {
         const formattedGoals = (goalsData || []).map(goal => {
-          // Handle the join results properly - they come as arrays
-          const incomeCategory = Array.isArray(goal.financeiro_categorias_entrada) ? goal.financeiro_categorias_entrada[0] : goal.financeiro_categorias_entrada;
-          const expenseCategory = Array.isArray(goal.financeiro_categorias_saida) ? goal.financeiro_categorias_saida[0] : goal.financeiro_categorias_saida;
+          // Get category information based on goal type
+          const incomeCategory = goal.financeiro_categorias_entrada;
+          const expenseCategory = goal.financeiro_categorias_saida;
           
-          // Fix: Access properties correctly from the category objects
+          // Determine category name and color
           const categoryName = incomeCategory?.nome || expenseCategory?.nome || 'Sem categoria';
           const categoryColor = incomeCategory?.cor || expenseCategory?.cor || '#6B7280';
           const goalType: 'income' | 'expense' = goal.categoria_id ? 'income' : 'expense';
@@ -75,9 +81,9 @@ const GoalsManager: React.FC = () => {
           return {
             id: goal.id,
             name: goal.nome || 'Meta sem nome',
-            targetAmount: Number(goal.valor_alvo), // Fix: Use correct field name
+            targetAmount: Number(goal.valor_alvo),
             currentAmount: Number(goal.valor_atual || 0),
-            deadline: goal.periodo_fim, // Fix: Use correct field name
+            deadline: goal.periodo_fim,
             category: categoryName,
             categoryColor: categoryColor,
             type: goalType
@@ -159,35 +165,37 @@ const GoalsManager: React.FC = () => {
   const handleSaveGoal = async (goalData: any) => {
     try {
       if (editingGoal) {
-        // Fix: Use correct field names for update
+        // Update existing goal
         const { error } = await supabase
           .from('financeiro_metas')
           .update({
             nome: goalData.name,
-            valor_alvo: goalData.targetAmount, // Fix: Use correct field name
+            valor_alvo: goalData.targetAmount,
             valor_atual: goalData.currentAmount,
-            periodo_fim: goalData.deadline, // Fix: Use correct field name
+            periodo_fim: goalData.deadline,
             categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
             categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
-            tipo: goalData.type === 'income' ? 'receita' : 'economia'
+            tipo: goalData.type === 'income' ? 'entrada' : 'saida'
           })
           .eq('id', editingGoal.id);
 
         if (error) throw error;
       } else {
-        // Fix: Use correct field names for insert
+        // Create new goal
         const { error } = await supabase
           .from('financeiro_metas')
           .insert({
             cliente_id: cliente?.id,
             nome: goalData.name,
-            valor_alvo: goalData.targetAmount, // Fix: Use correct field name
+            valor_alvo: goalData.targetAmount,
             valor_atual: goalData.currentAmount,
-            periodo_inicio: new Date().toISOString().split('T')[0], // Add required field
-            periodo_fim: goalData.deadline, // Fix: Use correct field name
+            periodo_inicio: new Date().toISOString().split('T')[0],
+            periodo_fim: goalData.deadline,
             categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
             categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
-            tipo: goalData.type === 'income' ? 'receita' : 'economia'
+            tipo: goalData.type === 'income' ? 'entrada' : 'saida',
+            repetir: false,
+            concluida: false
           });
 
         if (error) throw error;
@@ -239,11 +247,7 @@ const GoalsManager: React.FC = () => {
 
       {/* Goals List */}
       <div className="space-y-3 max-h-96 overflow-y-auto">
-        {isLoading ? (
-          <p className="text-center py-6 text-gray-400 text-sm">
-            Carregando metas...
-          </p>
-        ) : goals.length > 0 ? goals.map((goal) => {
+        {goals.length > 0 ? goals.map((goal) => {
           const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
           const progressColor = getProgressColor(progress);
           
