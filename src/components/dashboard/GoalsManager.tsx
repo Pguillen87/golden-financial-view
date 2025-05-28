@@ -63,9 +63,9 @@ const GoalsManager: React.FC = () => {
         console.error('Erro ao buscar metas:', error);
       } else {
         const formattedGoals = (goalsData || []).map(goal => {
-          // Handle the join results properly
-          const incomeCategory = goal.financeiro_categorias_entrada;
-          const expenseCategory = goal.financeiro_categorias_saida;
+          // Handle the join results properly - they come as arrays
+          const incomeCategory = Array.isArray(goal.financeiro_categorias_entrada) ? goal.financeiro_categorias_entrada[0] : goal.financeiro_categorias_entrada;
+          const expenseCategory = Array.isArray(goal.financeiro_categorias_saida) ? goal.financeiro_categorias_saida[0] : goal.financeiro_categorias_saida;
           
           // Fix: Access properties correctly from the category objects
           const categoryName = incomeCategory?.nome || expenseCategory?.nome || 'Sem categoria';
