@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -35,47 +37,61 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
     description: '',
     amount: '',
     date: new Date(),
-    category: '',
-    type: type
+    category_id: '',
+    observations: ''
   });
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [tempDate, setTempDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     if (transaction) {
-      console.log('Loading transaction for edit:', transaction);
       setFormData({
         description: transaction.description || '',
         amount: transaction.amount?.toString() || '',
         date: transaction.date ? new Date(transaction.date) : new Date(),
-        category: transaction.categoria_id?.toString() || transaction.category_id?.toString() || '',
-        type: transaction.type || type
+        category_id: transaction.categoria_id?.toString() || '',
+        observations: transaction.observations || ''
       });
+      setTempDate(transaction.date ? new Date(transaction.date) : new Date());
     } else {
       setFormData({
         description: '',
         amount: '',
         date: new Date(),
-        category: '',
-        type: type
+        category_id: '',
+        observations: ''
       });
+      setTempDate(new Date());
     }
-  }, [transaction, type, isOpen]);
+  }, [transaction, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.description.trim() && formData.amount && formData.date && formData.category) {
-      console.log('Submitting transaction data:', formData);
+    if (formData.description.trim() && formData.amount && formData.category_id) {
       onSave({
-        ...formData,
+        description: formData.description,
         amount: parseFloat(formData.amount),
-        date: formData.date.toISOString().split('T')[0],
-        category_id: parseInt(formData.category)
+        date: format(formData.date, 'yyyy-MM-dd'),
+        category_id: parseInt(formData.category_id),
+        observations: formData.observations
       });
     }
   };
 
   const handleChange = (field: string, value: string | Date) => {
-    console.log(`Updating field ${field} with value:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateConfirm = () => {
+    if (tempDate) {
+      handleChange('date', tempDate);
+      setIsCalendarOpen(false);
+    }
+  };
+
+  const handleDateCancel = () => {
+    setTempDate(formData.date);
+    setIsCalendarOpen(false);
   };
 
   return (
@@ -83,7 +99,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
       <DialogContent className="bg-gray-900 border border-gray-700 text-white max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white">
-            {transaction ? 'Editar' : 'Novo'} Lançamento - {type === 'income' ? 'Receita' : 'Despesa'}
+            {transaction ? 'Editar' : 'Novo'} {type === 'income' ? 'Receita' : 'Despesa'}
           </DialogTitle>
         </DialogHeader>
 
@@ -94,7 +110,21 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
               id="description"
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Ex: Salário, Aluguel"
+              placeholder="Ex: Salário, Mercado, etc."
+              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="amount" className="text-white">Valor</Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              value={formData.amount}
+              onChange={(e) => handleChange('amount', e.target.value)}
+              placeholder="0,00"
               className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
               required
             />
@@ -104,53 +134,69 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
             <Label htmlFor="category" className="text-white">Categoria</Label>
             <CategorySelect
               type={type}
-              value={formData.category}
-              onChange={(value) => handleChange('category', value)}
-              placeholder={`Selecione uma categoria de ${type === 'income' ? 'receita' : 'despesa'}`}
+              value={formData.category_id}
+              onChange={(value) => handleChange('category_id', value)}
+              placeholder="Selecione uma categoria"
+              required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="amount" className="text-white">Valor</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => handleChange('amount', e.target.value)}
-                placeholder="0.00"
-                className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="date" className="text-white">Data</Label>
-              <Popover>
-                <PopoverTrigger asChild>
+          <div>
+            <Label htmlFor="date" className="text-white">Data</Label>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal bg-gray-800 border-gray-600 text-white hover:bg-gray-700",
+                    !formData.date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.date ? format(formData.date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecionar data</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
+                <Calendar
+                  mode="single"
+                  selected={tempDate}
+                  onSelect={setTempDate}
+                  locale={ptBR}
+                  initialFocus
+                  className="pointer-events-auto bg-gray-800 text-white"
+                />
+                <div className="flex justify-end gap-2 p-3 border-t border-gray-600">
                   <Button
+                    size="sm"
                     variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal bg-gray-800 border-gray-600 text-white hover:bg-gray-700",
-                      !formData.date && "text-muted-foreground"
-                    )}
+                    onClick={handleDateCancel}
+                    className="border-gray-600 text-white bg-gray-800 hover:bg-gray-700"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.date ? format(formData.date, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                    Cancelar
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.date}
-                    onSelect={(date) => date && handleChange('date', date)}
-                    initialFocus
-                    className="pointer-events-auto bg-gray-800 text-white"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+                  <Button
+                    size="sm"
+                    onClick={handleDateConfirm}
+                    className="bg-[#FFD700] hover:bg-[#E6C200] text-black"
+                  >
+                    <Check className="h-3 w-3 mr-1" />
+                    OK
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <Label htmlFor="observations" className="text-white">Observações (opcional)</Label>
+            <Textarea
+              id="observations"
+              value={formData.observations}
+              onChange={(e) => handleChange('observations', e.target.value)}
+              placeholder="Observações adicionais..."
+              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 resize-none"
+              rows={3}
+            />
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
@@ -164,9 +210,9 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
             </Button>
             <Button
               type="submit"
-              className="bg-[#4299e1] hover:bg-[#3182ce] text-white"
+              className="bg-[#FFD700] hover:bg-[#E6C200] text-black font-medium"
             >
-              Salvar Lançamento
+              Salvar {type === 'income' ? 'Receita' : 'Despesa'}
             </Button>
           </div>
         </form>

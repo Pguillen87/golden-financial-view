@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, Target, Receipt, LucideIcon } from 'lucide-react';
 import CategoryManager from './CategoryManager';
 import GoalsManager from './GoalsManager';
@@ -31,19 +31,19 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
       id: 'categorias',
       label: 'Categorias',
       icon: BarChart3,
-      gradient: 'from-blue-500 to-purple-500'
+      gradient: 'from-blue-600 to-blue-700'
     },
     {
       id: 'metas',
       label: 'Metas',
       icon: Target,
-      gradient: 'from-green-500 to-emerald-500'
+      gradient: 'from-purple-600 to-purple-700'
     },
     {
       id: 'lancamentos',
       label: 'Lançamentos',
       icon: Receipt,
-      gradient: 'from-orange-500 to-red-500'
+      gradient: 'from-gray-600 to-gray-700'
     }
   ];
 
@@ -69,7 +69,7 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
   return (
     <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm">
       <h2 className="text-xl font-semibold mb-6 text-[#FFD700] bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
-        Gestão Financeira
+        Central de Controle Financeiro
       </h2>
 
       {/* Navigation Tabs */}
@@ -89,6 +89,8 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
               `}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              layout
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
               <tab.icon className="h-4 w-4" />
               {tab.label}
@@ -98,15 +100,23 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
       </div>
 
       {/* Tab Content */}
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3 }}
-      >
-        {renderContent()}
-      </motion.div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 200, 
+            damping: 25,
+            duration: 0.3 
+          }}
+          layout
+        >
+          {renderContent()}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

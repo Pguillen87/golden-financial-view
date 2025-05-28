@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,8 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
     category: '',
     categoryType: 'expense' as 'income' | 'expense'
   });
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [tempDate, setTempDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     if (goal) {
@@ -48,6 +51,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
         category: goal.category || '',
         categoryType: goal.categoryType || 'expense'
       });
+      setTempDate(goal.deadline ? new Date(goal.deadline) : new Date());
     } else {
       setFormData({
         name: '',
@@ -57,6 +61,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
         category: '',
         categoryType: 'expense'
       });
+      setTempDate(new Date());
     }
   }, [goal, isOpen]);
 
@@ -74,6 +79,18 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
 
   const handleChange = (field: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateConfirm = () => {
+    if (tempDate) {
+      handleChange('deadline', tempDate);
+      setIsCalendarOpen(false);
+    }
+  };
+
+  const handleDateCancel = () => {
+    setTempDate(formData.deadline);
+    setIsCalendarOpen(false);
   };
 
   return (
@@ -127,6 +144,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
               <Input
                 id="targetAmount"
                 type="number"
+                step="0.01"
                 value={formData.targetAmount}
                 onChange={(e) => handleChange('targetAmount', e.target.value)}
                 placeholder="10000"
@@ -140,6 +158,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
               <Input
                 id="currentAmount"
                 type="number"
+                step="0.01"
                 value={formData.currentAmount}
                 onChange={(e) => handleChange('currentAmount', e.target.value)}
                 placeholder="0"
@@ -150,7 +169,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
 
           <div>
             <Label htmlFor="deadline" className="text-white">Data Limite</Label>
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -160,17 +179,36 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.deadline ? format(formData.deadline, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                  {formData.deadline ? format(formData.deadline, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecionar data</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
                 <Calendar
                   mode="single"
-                  selected={formData.deadline}
-                  onSelect={(date) => date && handleChange('deadline', date)}
+                  selected={tempDate}
+                  onSelect={setTempDate}
+                  locale={ptBR}
                   initialFocus
                   className="pointer-events-auto bg-gray-800 text-white"
                 />
+                <div className="flex justify-end gap-2 p-3 border-t border-gray-600">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDateCancel}
+                    className="border-gray-600 text-white bg-gray-800 hover:bg-gray-700"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleDateConfirm}
+                    className="bg-[#FFD700] hover:bg-[#E6C200] text-black"
+                  >
+                    <Check className="h-3 w-3 mr-1" />
+                    OK
+                  </Button>
+                </div>
               </PopoverContent>
             </Popover>
           </div>
