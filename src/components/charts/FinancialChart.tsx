@@ -1,57 +1,51 @@
 
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface FinancialChartProps {
-  data: any[];
-  type: 'bar' | 'pie';
-  title?: string;
-  dataKey?: string;
-  nameKey?: string;
-  showToggle?: boolean;
-  showLegend?: boolean;
-  incomeData?: any[];
-  expenseData?: any[];
+interface ChartData {
+  name: string;
+  entradas: number;
+  saidas: number;
 }
 
-const FinancialChart: React.FC<FinancialChartProps> = ({
-  data,
-  type,
-  title,
-  dataKey = 'value',
-  nameKey = 'name',
-  showToggle = true
-}) => {
-  const [showLegend, setShowLegend] = useState(true);
+interface PieData {
+  name: string;
+  value: number;
+}
 
-  const CustomLegend = (props: any) => {
-    const { payload } = props;
-    return (
-      <div className="flex flex-wrap justify-center gap-4 mt-4">
-        {payload?.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded" 
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-white text-sm">{entry.value}</span>
-          </div>
-        ))}
-      </div>
-    );
+interface FinancialChartProps {
+  chartData: ChartData[];
+  pieData: PieData[];
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+const FinancialChart: React.FC<FinancialChartProps> = ({ chartData, pieData }) => {
+  const [showEntradas, setShowEntradas] = useState(true);
+  const [showSaidas, setShowSaidas] = useState(true);
+
+  const toggleEntradas = () => setShowEntradas(!showEntradas);
+  const toggleSaidas = () => setShowSaidas(!showSaidas);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const customTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-medium">{label}</p>
+          <p className="text-white font-medium">{`${label}`}</p>
           {payload.map((entry: any, index: number) => (
-            <p key={index} className="text-white text-sm">
-              <span style={{ color: entry.color }}>{entry.name}: </span>
-              {entry.value}
+            <p key={index} style={{ color: entry.color }} className="text-sm">
+              {`${entry.dataKey === 'entradas' ? 'Receitas' : 'Despesas'}: ${formatCurrency(entry.value)}`}
             </p>
           ))}
         </div>
@@ -60,74 +54,109 @@ const FinancialChart: React.FC<FinancialChartProps> = ({
     return null;
   };
 
-  if (type === 'bar') {
+  const customPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 shadow-lg">
+          <p className="text-white font-medium">{payload[0].name}</p>
+          <p className="text-white text-sm">{formatCurrency(payload[0].value)}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    if (percent < 0.05) return null; // Don't show labels for slices smaller than 5%
+    
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
     return (
-      <div className="relative">
-        {showToggle && (
-          <Button
-            onClick={() => setShowLegend(!showLegend)}
-            size="sm"
-            variant="ghost"
-            className="absolute top-2 right-2 z-10 text-gray-400 hover:text-white p-2 h-8 w-8 rounded-lg hover:bg-white/10"
-            title={showLegend ? "Ocultar legenda" : "Mostrar legenda"}
-          >
-            {showLegend ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-        )}
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12}>
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Bar Chart */}
+      <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-white">Receitas vs Despesas</h3>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={toggleEntradas}
+              className={`flex items-center gap-1 ${showEntradas ? 'text-green-400' : 'text-gray-500'}`}
+            >
+              {showEntradas ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+              Receitas
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={toggleSaidas}
+              className={`flex items-center gap-1 ${showSaidas ? 'text-red-400' : 'text-gray-500'}`}
+            >
+              {showSaidas ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+              Despesas
+            </Button>
+          </div>
+        </div>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data}>
+          <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis dataKey="name" stroke="#9CA3AF" />
-            <YAxis stroke="#9CA3AF" />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="entradas" fill="#22c55e" />
-            <Bar dataKey="saidas" fill="#ef4444" />
-            {showLegend && <Legend content={<CustomLegend />} />}
+            <YAxis tickFormatter={formatCurrency} stroke="#9CA3AF" />
+            <Tooltip content={customTooltip} />
+            <Legend 
+              formatter={(value) => (
+                <span className="text-white">
+                  {value === 'entradas' ? 'Receitas' : 'Despesas'}
+                </span>
+              )}
+            />
+            {showEntradas && <Bar dataKey="entradas" fill="#22c55e" />}
+            {showSaidas && <Bar dataKey="saidas" fill="#ef4444" />}
           </BarChart>
         </ResponsiveContainer>
       </div>
-    );
-  }
 
-  if (type === 'pie') {
-    return (
-      <div className="relative">
-        {showToggle && (
-          <Button
-            onClick={() => setShowLegend(!showLegend)}
-            size="sm"
-            variant="ghost"
-            className="absolute top-2 right-2 z-10 text-gray-400 hover:text-white p-2 h-8 w-8 rounded-lg hover:bg-white/10"
-            title={showLegend ? "Ocultar legenda" : "Mostrar legenda"}
-          >
-            {showLegend ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-        )}
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey={dataKey}
-              nameKey={nameKey}
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill || `hsl(${index * 45}, 70%, 50%)`} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-            {showLegend && <Legend content={<CustomLegend />} />}
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  }
-
-  return null;
+      {/* Pie Chart */}
+      {pieData.length > 0 && (
+        <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-lg font-semibold text-white mb-4">Despesas por Categoria</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={renderCustomizedLabel}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={customPieTooltip} />
+              <Legend 
+                formatter={(value) => <span className="text-white">{value}</span>}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default FinancialChart;

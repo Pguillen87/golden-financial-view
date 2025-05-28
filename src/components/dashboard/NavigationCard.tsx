@@ -37,7 +37,7 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
       id: 'metas',
       label: 'Metas',
       icon: Target,
-      gradient: 'from-purple-600 to-purple-700'
+      gradient: 'from-slate-600 to-slate-700'
     },
     {
       id: 'lancamentos',
@@ -99,24 +99,30 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
         </div>
       </div>
 
-      {/* Tab Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 200, 
-            damping: 25,
-            duration: 0.3 
-          }}
-          layout
-        >
-          {renderContent()}
-        </motion.div>
-      </AnimatePresence>
+      {/* Tab Content with improved transitions */}
+      <motion.div 
+        className="min-h-[400px]"
+        layout 
+        transition={{ type: "spring", stiffness: 150, damping: 20 }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 200, 
+              damping: 25,
+              duration: 0.3 
+            }}
+            layout
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 };

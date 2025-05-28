@@ -14,14 +14,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import CategorySelect from './CategorySelect';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Goal {
+  id: number;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+  category: string;
+}
 
 interface GoalFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (goalData: any) => void;
-  goal?: any;
+  goal?: Goal | null;
 }
 
 const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
@@ -30,14 +47,16 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
   onSave,
   goal
 }) => {
+  const { cliente } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     targetAmount: '',
     currentAmount: '',
     deadline: new Date(),
     category: '',
-    categoryType: 'expense' as 'income' | 'expense'
+    type: 'expense'
   });
+  const [categories, setCategories] = useState<any[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [tempDate, setTempDate] = useState<Date | undefined>(new Date());
 
@@ -49,30 +68,61 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
         currentAmount: goal.currentAmount?.toString() || '',
         deadline: goal.deadline ? new Date(goal.deadline) : new Date(),
         category: goal.category || '',
-        categoryType: goal.categoryType || 'expense'
+        type: 'expense'
       });
       setTempDate(goal.deadline ? new Date(goal.deadline) : new Date());
     } else {
       setFormData({
         name: '',
         targetAmount: '',
-        currentAmount: '0',
+        currentAmount: '',
         deadline: new Date(),
         category: '',
-        categoryType: 'expense'
+        type: 'expense'
       });
       setTempDate(new Date());
     }
   }, [goal, isOpen]);
 
+  useEffect(() => {
+    if (cliente && isOpen) {
+      fetchCategories();
+    }
+  }, [cliente, isOpen, formData.type]);
+
+  const fetchCategories = async () => {
+    if (!cliente) return;
+
+    try {
+      const table = formData.type === 'income' ? 'financeiro_categorias_entrada' : 'financeiro_categorias_saida';
+      
+      const { data, error } = await supabase
+        .from(table)
+        .select('id, nome, cor')
+        .eq('cliente_id', cliente.id)
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) {
+        console.error('Erro ao buscar categorias:', error);
+      } else {
+        setCategories(data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name.trim() && formData.targetAmount && formData.deadline) {
       onSave({
-        ...formData,
+        name: formData.name,
         targetAmount: parseFloat(formData.targetAmount),
         currentAmount: parseFloat(formData.currentAmount) || 0,
-        deadline: formData.deadline.toISOString().split('T')[0]
+        deadline: format(formData.deadline, 'yyyy-MM-dd'),
+        category: formData.category,
+        type: formData.type
       });
     }
   };
@@ -98,7 +148,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
       <DialogContent className="bg-gray-900 border border-gray-700 text-white max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white">
-            {goal ? 'Editar Meta' : 'Nova Meta'}
+            {goal ? 'Editar' : 'Nova'} Meta
           </DialogTitle>
         </DialogHeader>
 
@@ -109,45 +159,65 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
               id="name"
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              placeholder="Ex: Emergência, Viagem"
+              placeholder="Ex: Viagem, Emergência, etc."
               className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="categoryType" className="text-white">Tipo de Categoria</Label>
-            <select
-              id="categoryType"
-              value={formData.categoryType}
-              onChange={(e) => handleChange('categoryType', e.target.value as 'income' | 'expense')}
-              className="w-full bg-gray-800 border border-gray-600 text-white rounded-md px-3 py-2"
-            >
-              <option value="expense">Despesa</option>
-              <option value="income">Receita</option>
-            </select>
+            <Label htmlFor="type" className="text-white">Tipo</Label>
+            <Select value={formData.type} onValueChange={(value) => handleChange('type', value)}>
+              <SelectTrigger className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600 text-white" side="bottom" align="start">
+                <SelectItem value="expense" className="text-white hover:bg-gray-700 focus:bg-gray-700">
+                  Meta de Economia (Despesa)
+                </SelectItem>
+                <SelectItem value="income" className="text-white hover:bg-gray-700 focus:bg-gray-700">
+                  Meta de Receita
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <Label htmlFor="category" className="text-white">Categoria</Label>
-            <CategorySelect
-              type={formData.categoryType}
-              value={formData.category}
-              onChange={(value) => handleChange('category', value)}
-              placeholder="Selecione uma categoria"
-            />
+            <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
+              <SelectTrigger className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
+                <SelectValue placeholder="Selecione uma categoria" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600 text-white z-50" side="bottom" align="start">
+                {categories.map((category) => (
+                  <SelectItem 
+                    key={category.id} 
+                    value={category.id.toString()}
+                    className="text-white hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: category.cor || '#666' }}
+                      />
+                      {category.nome}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="targetAmount" className="text-white">Valor Meta</Label>
+              <Label htmlFor="targetAmount" className="text-white">Valor Alvo</Label>
               <Input
                 id="targetAmount"
                 type="number"
                 step="0.01"
                 value={formData.targetAmount}
                 onChange={(e) => handleChange('targetAmount', e.target.value)}
-                placeholder="10000"
+                placeholder="0,00"
                 className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
                 required
               />
@@ -161,14 +231,14 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
                 step="0.01"
                 value={formData.currentAmount}
                 onChange={(e) => handleChange('currentAmount', e.target.value)}
-                placeholder="0"
+                placeholder="0,00"
                 className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="deadline" className="text-white">Data Limite</Label>
+            <Label htmlFor="deadline" className="text-white">Prazo</Label>
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -182,7 +252,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
                   {formData.deadline ? format(formData.deadline, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecionar data</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
+              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start" side="bottom">
                 <Calendar
                   mode="single"
                   selected={tempDate}
@@ -206,7 +276,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
                     className="bg-[#FFD700] hover:bg-[#E6C200] text-black"
                   >
                     <Check className="h-3 w-3 mr-1" />
-                    OK
+                    Confirmar
                   </Button>
                 </div>
               </PopoverContent>

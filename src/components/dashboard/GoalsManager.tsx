@@ -1,8 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Target, Edit, Trash2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import GoalFormDialog from './GoalFormDialog';
 import ConfirmationDialog from '@/components/ui/confirmation-dialog';
 
@@ -13,11 +16,17 @@ interface Goal {
   currentAmount: number;
   deadline: string;
   category: string;
+  categoryColor?: string;
+  type: 'income' | 'expense';
 }
 
 const GoalsManager: React.FC = () => {
+  const { cliente } = useAuth();
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [confirmationDialog, setConfirmationDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -30,48 +39,57 @@ const GoalsManager: React.FC = () => {
     onConfirm: () => {}
   });
 
-  const [goals, setGoals] = useState<Goal[]>([
-    {
-      id: 1,
-      name: 'Emergência',
-      targetAmount: 10000,
-      currentAmount: 6500,
-      deadline: '2024-12-31',
-      category: 'Poupança',
-    },
-    {
-      id: 2,
-      name: 'Viagem',
-      targetAmount: 5000,
-      currentAmount: 2800,
-      deadline: '2024-08-15',
-      category: 'Lazer',
-    },
-    {
-      id: 3,
-      name: 'Curso',
-      targetAmount: 2000,
-      currentAmount: 1200,
-      deadline: '2024-06-30',
-      category: 'Educação',
-    },
-    {
-      id: 4,
-      name: 'Carro',
-      targetAmount: 30000,
-      currentAmount: 12000,
-      deadline: '2025-12-31',
-      category: 'Transporte',
-    },
-    {
-      id: 5,
-      name: 'Casa',
-      targetAmount: 50000,
-      currentAmount: 8000,
-      deadline: '2026-06-30',
-      category: 'Moradia',
-    },
-  ]);
+  useEffect(() => {
+    if (cliente) {
+      fetchGoals();
+    }
+  }, [cliente]);
+
+  const fetchGoals = async () => {
+    if (!cliente) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('financeiro_metas')
+        .select(`
+          *,
+          financeiro_categorias_entrada(nome, cor),
+          financeiro_categorias_saida(nome, cor)
+        `)
+        .eq('cliente_id', cliente.id)
+        .order('criado_em', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar metas:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as metas.",
+          variant: "destructive",
+        });
+      } else {
+        const mappedGoals = data?.map(meta => ({
+          id: meta.id,
+          name: meta.nome || 'Meta sem nome',
+          targetAmount: Number(meta.valor_alvo) || 0,
+          currentAmount: Number(meta.valor_atual) || 0,
+          deadline: meta.periodo_fim,
+          category: meta.financeiro_categorias_entrada?.nome || meta.financeiro_categorias_saida?.nome || 'Sem categoria',
+          categoryColor: meta.financeiro_categorias_entrada?.cor || meta.financeiro_categorias_saida?.cor || '#666',
+          type: meta.categoria_id ? 'income' : 'expense'
+        })) || [];
+        setGoals(mappedGoals);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar metas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao carregar metas.",
+        variant: "destructive",
+      });
+    }
+    setIsLoading(false);
+  };
 
   const getProgressPercentage = (current: number, target: number) => {
     return Math.min((current / target) * 100, 100);
@@ -103,27 +121,93 @@ const GoalsManager: React.FC = () => {
       isOpen: true,
       title: 'Confirmar Exclusão',
       description: `Tem certeza que deseja excluir a meta "${goalName}"? Esta ação não pode ser desfeita.`,
-      onConfirm: () => {
-        setGoals(prev => prev.filter(goal => goal.id !== id));
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('financeiro_metas')
+            .delete()
+            .eq('id', id);
+
+          if (error) throw error;
+
+          await fetchGoals();
+          toast({
+            title: "Sucesso",
+            description: "Meta excluída com sucesso.",
+          });
+        } catch (error) {
+          console.error('Erro ao excluir meta:', error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível excluir a meta.",
+            variant: "destructive",
+          });
+        }
         setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
       }
     });
   };
 
-  const handleSaveGoal = (goalData: any) => {
-    if (editingGoal) {
-      setGoals(prev => prev.map(goal => 
-        goal.id === editingGoal.id ? { ...goal, ...goalData } : goal
-      ));
-    } else {
-      const newGoal = {
-        id: Date.now(),
-        ...goalData
-      };
-      setGoals(prev => [...prev, newGoal]);
+  const handleSaveGoal = async (goalData: any) => {
+    try {
+      if (editingGoal) {
+        // Editar meta existente
+        const { error } = await supabase
+          .from('financeiro_metas')
+          .update({
+            nome: goalData.name,
+            valor_alvo: goalData.targetAmount,
+            valor_atual: goalData.currentAmount,
+            periodo_fim: goalData.deadline,
+            categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
+            categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
+            tipo: goalData.type === 'income' ? 'receita' : 'economia'
+          })
+          .eq('id', editingGoal.id);
+
+        if (error) throw error;
+      } else {
+        // Criar nova meta
+        const { error } = await supabase
+          .from('financeiro_metas')
+          .insert({
+            cliente_id: cliente?.id,
+            nome: goalData.name,
+            valor_alvo: goalData.targetAmount,
+            valor_atual: goalData.currentAmount,
+            periodo_inicio: new Date().toISOString().split('T')[0],
+            periodo_fim: goalData.deadline,
+            categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
+            categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
+            tipo: goalData.type === 'income' ? 'receita' : 'economia'
+          });
+
+        if (error) throw error;
+      }
+
+      await fetchGoals();
+      toast({
+        title: "Sucesso",
+        description: editingGoal ? "Meta atualizada com sucesso." : "Meta criada com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao salvar meta:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar a meta.",
+        variant: "destructive",
+      });
     }
     setIsDialogOpen(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="text-gray-400">Carregando metas...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -162,7 +246,13 @@ const GoalsManager: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <h4 className="text-sm font-semibold text-white truncate">{goal.name}</h4>
-                      <p className="text-xs text-gray-400 truncate">{goal.category}</p>
+                      <div className="flex items-center gap-1">
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: goal.categoryColor }}
+                        />
+                        <p className="text-xs text-gray-400 truncate">{goal.category}</p>
+                      </div>
                     </div>
                   </div>
                   

@@ -155,7 +155,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
                   {formData.date ? format(formData.date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecionar data</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
+              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start" side="bottom">
                 <Calendar
                   mode="single"
                   selected={tempDate}
@@ -179,7 +179,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
                     className="bg-[#FFD700] hover:bg-[#E6C200] text-black"
                   >
                     <Check className="h-3 w-3 mr-1" />
-                    OK
+                    Confirmar
                   </Button>
                 </div>
               </PopoverContent>

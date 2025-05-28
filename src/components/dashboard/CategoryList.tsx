@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Edit, Trash2, Plus, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface Category {
   id: number;
@@ -33,8 +36,65 @@ const CategoryList: React.FC<CategoryListProps> = ({
   onToggleCategory
 }) => {
   const [showInactive, setShowInactive] = useState(false);
+  const { cliente } = useAuth();
+  const { toast } = useToast();
 
   const filteredCategories = categories.filter(cat => showInactive || cat.active);
+
+  const handleDeleteWithCheck = async (categoryId: number, categoryName: string) => {
+    if (!cliente) return;
+
+    try {
+      // Check for linked transactions and goals
+      const entradaTable = 'financeiro_entradas';
+      const saidaTable = 'financeiro_saidas';
+      const metasTable = 'financeiro_metas';
+      const categoryField = type === 'income' ? 'categoria_id' : 'categoria_id';
+      const metaCategoryField = type === 'income' ? 'categoria_id' : 'categoria_saida_id';
+
+      // Check entries
+      const { data: entradas } = await supabase
+        .from(type === 'income' ? entradaTable : saidaTable)
+        .select('id')
+        .eq(categoryField, categoryId);
+
+      // Check goals
+      const { data: metas } = await supabase
+        .from(metasTable)
+        .select('id')
+        .eq(metaCategoryField, categoryId);
+
+      const hasLinkedData = (entradas && entradas.length > 0) || (metas && metas.length > 0);
+
+      if (hasLinkedData) {
+        toast({
+          title: "Não é possível excluir",
+          description: `A categoria "${categoryName}" possui transações ou metas vinculadas. Ela será inativada ao invés de excluída.`,
+          variant: "destructive",
+        });
+
+        // Deactivate instead of delete
+        const table = type === 'income' ? 'financeiro_categorias_entrada' : 'financeiro_categorias_saida';
+        const { error } = await supabase
+          .from(table)
+          .update({ ativo: false })
+          .eq('id', categoryId);
+
+        if (error) throw error;
+
+        onToggleCategory(categoryId, type);
+      } else {
+        onDeleteCategory(categoryId, type, categoryName);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar categoria:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível verificar os vínculos da categoria.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <motion.div 
@@ -105,6 +165,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                 <Switch
                   checked={category.active}
                   onCheckedChange={() => onToggleCategory(category.id, type)}
+                  className="rounded-full"
                 />
                 <Button 
                   size="sm" 
@@ -117,7 +178,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  onClick={() => onDeleteCategory(category.id, type, category.name)}
+                  onClick={() => handleDeleteWithCheck(category.id, category.name)}
                   className="text-red-400 hover:text-red-300 p-2 h-8 w-8 rounded-lg hover:bg-red-500/10"
                 >
                   <Trash2 className="h-3 w-3" />

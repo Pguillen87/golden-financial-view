@@ -28,12 +28,14 @@ const SubTabs: React.FC<SubTabsProps> = ({ tabs, activeTab, onTabChange }) => {
               relative py-3 px-6 text-sm font-medium rounded-xl
               transition-all duration-300 flex items-center gap-2
               ${activeTab === tab.id 
-                ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg` 
+                ? `bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg` 
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
               }
             `}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            layout
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             <tab.icon className="h-4 w-4" />
             {tab.label}
