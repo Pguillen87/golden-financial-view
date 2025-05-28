@@ -68,13 +68,13 @@ const GoalsManager: React.FC = () => {
         });
       } else {
         const formattedGoals = (goalsData || []).map(goal => {
-          // Get category information based on goal type - handle as arrays from Supabase joins
-          const incomeCategories = goal.financeiro_categorias_entrada as { nome: string; cor: string; }[] | null;
-          const expenseCategories = goal.financeiro_categorias_saida as { nome: string; cor: string; }[] | null;
+          // Get category information based on goal type - handle as single objects from Supabase joins
+          const incomeCategory = goal.financeiro_categorias_entrada as { nome: string; cor: string; } | null;
+          const expenseCategory = goal.financeiro_categorias_saida as { nome: string; cor: string; } | null;
           
-          // Determine category name and color - access first element of array if it exists
-          const categoryName = incomeCategories?.[0]?.nome || expenseCategories?.[0]?.nome || 'Sem categoria';
-          const categoryColor = incomeCategories?.[0]?.cor || expenseCategories?.[0]?.cor || '#6B7280';
+          // Determine category name and color - access object properties directly
+          const categoryName = incomeCategory?.nome || expenseCategory?.nome || 'Sem categoria';
+          const categoryColor = incomeCategory?.cor || expenseCategory?.cor || '#6B7280';
           const goalType: 'income' | 'expense' = goal.categoria_id ? 'income' : 'expense';
 
           return {
