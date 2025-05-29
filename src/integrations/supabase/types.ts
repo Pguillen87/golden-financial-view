@@ -408,7 +408,6 @@ export type Database = {
           atualizado_em: string | null
           banco_id: number | null
           categoria_id: number | null
-          categoria_saida_id: number | null
           cliente_id: string
           concluida: boolean | null
           criado_em: string | null
@@ -426,7 +425,6 @@ export type Database = {
           atualizado_em?: string | null
           banco_id?: number | null
           categoria_id?: number | null
-          categoria_saida_id?: number | null
           cliente_id: string
           concluida?: boolean | null
           criado_em?: string | null
@@ -444,7 +442,6 @@ export type Database = {
           atualizado_em?: string | null
           banco_id?: number | null
           categoria_id?: number | null
-          categoria_saida_id?: number | null
           cliente_id?: string
           concluida?: boolean | null
           criado_em?: string | null
@@ -464,13 +461,6 @@ export type Database = {
             columns: ["banco_id"]
             isOneToOne: false
             referencedRelation: "financeiro_bancos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "financeiro_metas_categoria_saida_id_fkey"
-            columns: ["categoria_saida_id"]
-            isOneToOne: false
-            referencedRelation: "financeiro_categorias_saida"
             referencedColumns: ["id"]
           },
           {

@@ -69,7 +69,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
         targetAmount: goal.targetAmount?.toString() || '',
         currentAmount: goal.currentAmount?.toString() || '',
         deadline: goal.deadline ? new Date(goal.deadline) : new Date(),
-        category: goal.category || '',
+        category: '',
         type: 'expense'
       });
       setTempDate(goal.deadline ? new Date(goal.deadline) : new Date());

@@ -24,11 +24,7 @@ export const useGoals = () => {
     try {
       const { data: goalsData, error } = await supabase
         .from('financeiro_metas')
-        .select(`
-          *,
-          financeiro_categorias_entrada(nome, cor),
-          financeiro_categorias_saida(nome, cor)
-        `)
+        .select('*')
         .eq('cliente_id', cliente.id)
         .order('periodo_fim', { ascending: true });
 
@@ -40,15 +36,36 @@ export const useGoals = () => {
           variant: "destructive",
         });
       } else {
-        const formattedGoals = goalsData?.map(goal => {
-          // Supabase sempre retorna joins como arrays, acesse o primeiro elemento com ?.[0]
-          const categoria_entrada = goal.financeiro_categorias_entrada?.[0] || null;
-          const categoria_saida = goal.financeiro_categorias_saida?.[0] || null;
+        // Para cada meta, buscar a categoria correspondente baseada no tipo
+        const formattedGoals = await Promise.all((goalsData || []).map(async (goal) => {
+          let categoryName = 'Sem categoria';
+          let categoryColor = '#6B7280';
           
-          // Determine category name and color
-          const categoryName = categoria_entrada?.nome || categoria_saida?.nome || 'Sem categoria';
-          const categoryColor = categoria_entrada?.cor || categoria_saida?.cor || '#6B7280';
-          const goalType: 'income' | 'expense' = goal.categoria_id ? 'income' : 'expense';
+          if (goal.categoria_id) {
+            if (goal.tipo === 'entrada') {
+              const { data: categoria } = await supabase
+                .from('financeiro_categorias_entrada')
+                .select('nome, cor')
+                .eq('id', goal.categoria_id)
+                .single();
+              
+              if (categoria) {
+                categoryName = categoria.nome;
+                categoryColor = categoria.cor || '#22c55e';
+              }
+            } else if (goal.tipo === 'saida') {
+              const { data: categoria } = await supabase
+                .from('financeiro_categorias_saida')
+                .select('nome, cor')
+                .eq('id', goal.categoria_id)
+                .single();
+              
+              if (categoria) {
+                categoryName = categoria.nome;
+                categoryColor = categoria.cor || '#ef4444';
+              }
+            }
+          }
 
           return {
             id: goal.id,
@@ -58,9 +75,9 @@ export const useGoals = () => {
             deadline: goal.periodo_fim,
             category: categoryName,
             categoryColor: categoryColor,
-            type: goalType
+            type: goal.tipo === 'entrada' ? 'income' : 'expense'
           };
-        }) || [];
+        }));
 
         setGoals(formattedGoals);
       }
@@ -110,8 +127,7 @@ export const useGoals = () => {
             valor_alvo: goalData.targetAmount,
             valor_atual: goalData.currentAmount,
             periodo_fim: goalData.deadline,
-            categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
-            categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
+            categoria_id: parseInt(goalData.category),
             tipo: goalData.type === 'income' ? 'entrada' : 'saida'
           })
           .eq('id', editingGoal.id);
@@ -128,8 +144,7 @@ export const useGoals = () => {
             valor_atual: goalData.currentAmount,
             periodo_inicio: new Date().toISOString().split('T')[0],
             periodo_fim: goalData.deadline,
-            categoria_id: goalData.type === 'income' ? parseInt(goalData.category) : null,
-            categoria_saida_id: goalData.type === 'expense' ? parseInt(goalData.category) : null,
+            categoria_id: parseInt(goalData.category),
             tipo: goalData.type === 'income' ? 'entrada' : 'saida',
             repetir: false,
             concluida: false
