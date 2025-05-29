@@ -75,7 +75,7 @@ export const useGoals = () => {
             deadline: goal.periodo_fim,
             category: categoryName,
             categoryColor: categoryColor,
-            type: goal.tipo === 'entrada' ? 'income' : 'expense'
+            type: (goal.tipo === 'entrada' ? 'income' : 'expense') as 'income' | 'expense'
           };
         }));
 

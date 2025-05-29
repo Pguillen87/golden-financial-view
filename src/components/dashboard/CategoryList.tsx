@@ -46,25 +46,21 @@ const CategoryList: React.FC<CategoryListProps> = ({
 
     try {
       // Check for linked transactions and goals
-      const entradaTable = 'financeiro_entradas';
-      const saidaTable = 'financeiro_saidas';
-      const metasTable = 'financeiro_metas';
-      const categoryField = type === 'income' ? 'categoria_id' : 'categoria_id';
-      const metaCategoryField = type === 'income' ? 'categoria_id' : 'categoria_saida_id';
-
-      // Check entries
-      const { data: entradas } = await supabase
-        .from(type === 'income' ? entradaTable : saidaTable)
+      const transactionTable = type === 'income' ? 'financeiro_entradas' : 'financeiro_saidas';
+      
+      // Check entries/saídas
+      const { data: transactionData } = await supabase
+        .from(transactionTable)
         .select('id')
-        .eq(categoryField, categoryId);
+        .eq('categoria_id', categoryId);
 
-      // Check goals
-      const { data: metas } = await supabase
-        .from(metasTable)
+      // Check goals (metas) - check both tipos since categories can be used for either type
+      const { data: metasData } = await supabase
+        .from('financeiro_metas')
         .select('id')
-        .eq(metaCategoryField, categoryId);
+        .eq('categoria_id', categoryId);
 
-      const hasLinkedData = (entradas && entradas.length > 0) || (metas && metas.length > 0);
+      const hasLinkedData = (transactionData && transactionData.length > 0) || (metasData && metasData.length > 0);
 
       if (hasLinkedData) {
         toast({
