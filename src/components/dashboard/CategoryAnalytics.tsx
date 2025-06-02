@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,30 +55,36 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
         endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
       }
 
-      // Buscar dados de entrada
+      console.log('Buscando dados de categorias do período:', startDate, 'até', endDate);
+
+      // Buscar dados de entrada com join nas categorias
       const { data: incomeResults, error: incomeError } = await supabase
         .from('financeiro_entradas')
         .select(`
           valor,
-          financeiro_categorias_entrada(nome, cor)
+          financeiro_categorias_entrada!inner(nome, cor)
         `)
         .eq('cliente_id', cliente.id)
         .gte('data', startDate)
         .lt('data', endDate);
 
-      // Buscar dados de saída
+      // Buscar dados de saída com join nas categorias
       const { data: expenseResults, error: expenseError } = await supabase
         .from('financeiro_saidas')
         .select(`
           valor,
-          financeiro_categorias_saida(nome, cor)
+          financeiro_categorias_saida!inner(nome, cor)
         `)
         .eq('cliente_id', cliente.id)
         .gte('data', startDate)
         .lt('data', endDate);
 
-      if (incomeError) console.error('Erro ao buscar entradas:', incomeError);
-      if (expenseError) console.error('Erro ao buscar saídas:', expenseError);
+      if (incomeError) {
+        console.error('Erro ao buscar entradas:', incomeError);
+      }
+      if (expenseError) {
+        console.error('Erro ao buscar saídas:', expenseError);
+      }
 
       // Processar dados de entrada
       const incomeByCategory = new Map();
@@ -115,6 +122,9 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
         value: data.value,
         fill: data.color
       }));
+
+      console.log('Dados de receitas por categoria:', incomeChartData);
+      console.log('Dados de despesas por categoria:', expenseChartData);
 
       setIncomeData(incomeChartData);
       setExpenseData(expenseChartData);

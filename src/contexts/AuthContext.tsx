@@ -40,9 +40,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Aguardar um pouco para garantir que o trigger foi executado (apenas para novos usuários)
-          setTimeout(async () => {
+          if (event === 'SIGNED_IN') {
+            setTimeout(async () => {
+              await fetchClienteData(session.user.id);
+            }, 100);
+          } else {
             await fetchClienteData(session.user.id);
-          }, 100);
+          }
         } else {
           setCliente(null);
         }
@@ -69,9 +73,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchClienteData = async (authUserId: string) => {
+  const fetchClienteData = async (authUserId: string, retryCount = 0) => {
     try {
-      console.log('Buscando dados do cliente para:', authUserId);
+      console.log('Buscando dados do cliente para:', authUserId, 'tentativa:', retryCount + 1);
       
       const { data, error } = await supabase
         .from('financeiro_clientes')
@@ -81,6 +85,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Erro ao buscar dados do cliente:', error);
+        
+        // Se não encontrou o cliente e é a primeira tentativa, tentar novamente após 2 segundos
+        if (error.code === 'PGRST116' && retryCount < 3) {
+          console.log('Cliente não encontrado, tentando novamente em 2 segundos...');
+          setTimeout(() => {
+            fetchClienteData(authUserId, retryCount + 1);
+          }, 2000);
+          return;
+        }
+        
         setCliente(null);
         return;
       }
