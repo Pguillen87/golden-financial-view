@@ -109,10 +109,20 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
 
       if (incomeError) {
         console.error('Erro ao buscar entradas:', incomeError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as receitas.",
+          variant: "destructive",
+        });
       }
 
       if (expenseError) {
         console.error('Erro ao buscar saídas:', expenseError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as despesas.",
+          variant: "destructive",
+        });
       }
 
       // Mapear e combinar transações

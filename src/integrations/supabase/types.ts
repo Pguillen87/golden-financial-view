@@ -141,7 +141,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "financeiro_bancos_cliente_id_fkey"
+            foreignKeyName: "fk_bancos_cliente"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "financeiro_clientes"
@@ -185,7 +185,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "financeiro_categorias_entrada_cliente_id_fkey"
+            foreignKeyName: "fk_cat_entrada_cliente"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "financeiro_clientes"
@@ -229,7 +229,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "financeiro_categorias_saida_cliente_id_fkey"
+            foreignKeyName: "fk_cat_saida_cliente"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "financeiro_clientes"
@@ -339,28 +339,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "financeiro_entradas_banco_id_fkey"
+            foreignKeyName: "fk_entradas_banco"
             columns: ["banco_id"]
             isOneToOne: false
             referencedRelation: "financeiro_bancos"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "financeiro_entradas_categoria_id_fkey"
+            foreignKeyName: "fk_entradas_categoria"
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "financeiro_categorias_entrada"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "financeiro_entradas_cliente_id_fkey"
+            foreignKeyName: "fk_entradas_cliente"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "financeiro_clientes"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "financeiro_entradas_forma_pagamento_id_fkey"
+            foreignKeyName: "fk_entradas_forma_pgto"
             columns: ["forma_pagamento_id"]
             isOneToOne: false
             referencedRelation: "financeiro_formas_pagamento"
@@ -395,7 +395,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "financeiro_formas_pagamento_cliente_id_fkey"
+            foreignKeyName: "fk_forma_pgto_cliente"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "financeiro_clientes"
@@ -407,7 +407,7 @@ export type Database = {
         Row: {
           atualizado_em: string | null
           banco_id: number | null
-          categoria_id: number | null
+          categoria_id: number
           cliente_id: string
           concluida: boolean | null
           criado_em: string | null
@@ -424,7 +424,7 @@ export type Database = {
         Insert: {
           atualizado_em?: string | null
           banco_id?: number | null
-          categoria_id?: number | null
+          categoria_id: number
           cliente_id: string
           concluida?: boolean | null
           criado_em?: string | null
@@ -441,7 +441,7 @@ export type Database = {
         Update: {
           atualizado_em?: string | null
           banco_id?: number | null
-          categoria_id?: number | null
+          categoria_id?: number
           cliente_id?: string
           concluida?: boolean | null
           criado_em?: string | null
@@ -457,14 +457,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "financeiro_metas_banco_id_fkey"
+            foreignKeyName: "fk_metas_banco"
             columns: ["banco_id"]
             isOneToOne: false
             referencedRelation: "financeiro_bancos"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "financeiro_metas_cliente_id_fkey"
+            foreignKeyName: "fk_metas_cliente"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "financeiro_clientes"
@@ -499,31 +499,31 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "financeiro_metas_categorias_categoria_entrada_id_fkey"
-            columns: ["categoria_entrada_id"]
-            isOneToOne: false
-            referencedRelation: "financeiro_categorias_entrada"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "financeiro_metas_categorias_categoria_saida_id_fkey"
-            columns: ["categoria_saida_id"]
-            isOneToOne: false
-            referencedRelation: "financeiro_categorias_saida"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "financeiro_metas_categorias_cliente_id_fkey"
+            foreignKeyName: "fk_metas_cat_cliente"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "financeiro_clientes"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "financeiro_metas_categorias_meta_id_fkey"
+            foreignKeyName: "fk_metas_cat_entrada"
+            columns: ["categoria_entrada_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_categorias_entrada"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_metas_cat_meta"
             columns: ["meta_id"]
             isOneToOne: false
             referencedRelation: "financeiro_metas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_metas_cat_saida"
+            columns: ["categoria_saida_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_categorias_saida"
             referencedColumns: ["id"]
           },
         ]
@@ -588,28 +588,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "financeiro_saidas_banco_id_fkey"
+            foreignKeyName: "fk_saidas_banco"
             columns: ["banco_id"]
             isOneToOne: false
             referencedRelation: "financeiro_bancos"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "financeiro_saidas_categoria_id_fkey"
+            foreignKeyName: "fk_saidas_categoria"
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "financeiro_categorias_saida"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "financeiro_saidas_cliente_id_fkey"
+            foreignKeyName: "fk_saidas_cliente"
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "financeiro_clientes"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "financeiro_saidas_forma_pagamento_id_fkey"
+            foreignKeyName: "fk_saidas_forma_pgto"
             columns: ["forma_pagamento_id"]
             isOneToOne: false
             referencedRelation: "financeiro_formas_pagamento"

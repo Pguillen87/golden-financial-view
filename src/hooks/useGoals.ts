@@ -35,6 +35,7 @@ export const useGoals = () => {
           description: "Não foi possível carregar as metas.",
           variant: "destructive",
         });
+        setGoals([]);
       } else {
         // Para cada meta, buscar a categoria correspondente baseada no tipo
         const formattedGoals = await Promise.all((goalsData || []).map(async (goal) => {
@@ -88,6 +89,7 @@ export const useGoals = () => {
         description: "Não foi possível carregar as metas.",
         variant: "destructive",
       });
+      setGoals([]);
     }
     setIsLoading(false);
   };
@@ -117,6 +119,8 @@ export const useGoals = () => {
   };
 
   const handleSaveGoal = async (goalData: any, editingGoal?: Goal | null) => {
+    if (!cliente) return;
+
     try {
       if (editingGoal) {
         // Update existing goal
@@ -138,7 +142,7 @@ export const useGoals = () => {
         const { error } = await supabase
           .from('financeiro_metas')
           .insert({
-            cliente_id: cliente?.id,
+            cliente_id: cliente.id,
             nome: goalData.name,
             valor_alvo: goalData.targetAmount,
             valor_atual: goalData.currentAmount,

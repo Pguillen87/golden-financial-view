@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
@@ -59,8 +60,12 @@ const Dashboard = () => {
         endDate = dateRange.to.toISOString().split('T')[0];
       } else {
         startDate = `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-01`;
-        endDate = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-01`;
+        const nextMonth = selectedMonth === 12 ? 1 : selectedMonth + 1;
+        const nextYear = selectedMonth === 12 ? selectedYear + 1 : selectedYear;
+        endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
       }
+
+      console.log('Buscando dados financeiros do período:', startDate, 'até', endDate);
 
       const { data: entradasData, error: entradasError } = await supabase
         .from('financeiro_entradas')
@@ -71,6 +76,11 @@ const Dashboard = () => {
 
       if (entradasError) {
         console.error('Erro ao buscar entradas:', entradasError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as receitas.",
+          variant: "destructive",
+        });
       } else {
         setEntradas(entradasData || []);
       }
@@ -84,6 +94,11 @@ const Dashboard = () => {
 
       if (saidasError) {
         console.error('Erro ao buscar saídas:', saidasError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as despesas.",
+          variant: "destructive",
+        });
       } else {
         setSaidas(saidasData || []);
       }
