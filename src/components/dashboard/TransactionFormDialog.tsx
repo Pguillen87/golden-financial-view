@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import CategorySelect from './CategorySelect';
 
@@ -38,6 +39,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
     amount: '',
     date: new Date(),
     category_id: '',
+    status: type === 'income' ? 'recebida' : 'pago',
     observations: ''
   });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -50,6 +52,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
         amount: transaction.amount?.toString() || '',
         date: transaction.date ? new Date(transaction.date) : new Date(),
         category_id: transaction.categoria_id?.toString() || '',
+        status: transaction.status || (type === 'income' ? 'recebida' : 'pago'),
         observations: transaction.observations || ''
       });
       setTempDate(transaction.date ? new Date(transaction.date) : new Date());
@@ -59,11 +62,12 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
         amount: '',
         date: new Date(),
         category_id: '',
+        status: type === 'income' ? 'recebida' : 'pago',
         observations: ''
       });
       setTempDate(new Date());
     }
-  }, [transaction, isOpen]);
+  }, [transaction, isOpen, type]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +77,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
         amount: parseFloat(formData.amount),
         date: format(formData.date, 'yyyy-MM-dd'),
         category_id: parseInt(formData.category_id),
+        status: formData.status,
         observations: formData.observations
       });
     }
@@ -92,6 +97,38 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
   const handleDateCancel = () => {
     setTempDate(formData.date);
     setIsCalendarOpen(false);
+  };
+
+  const getStatusOptions = () => {
+    if (type === 'income') {
+      return [
+        { value: 'recebida', label: 'Recebida' },
+        { value: 'a_receber', label: 'A Receber' },
+        { value: 'vencida', label: 'Vencida' }
+      ];
+    } else {
+      return [
+        { value: 'pago', label: 'Pago' },
+        { value: 'a_vencer', label: 'A Vencer' },
+        { value: 'vencido', label: 'Vencido' }
+      ];
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'recebida':
+      case 'pago':
+        return 'text-green-400';
+      case 'a_receber':
+      case 'a_vencer':
+        return 'text-yellow-400';
+      case 'vencida':
+      case 'vencido':
+        return 'text-red-400';
+      default:
+        return 'text-gray-400';
+    }
   };
 
   return (
@@ -141,6 +178,35 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
           </div>
 
           <div>
+            <Label htmlFor="status" className="text-white">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => handleChange('status', value)}
+            >
+              <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                <SelectValue>
+                  <span className={getStatusColor(formData.status)}>
+                    {getStatusOptions().find(opt => opt.value === formData.status)?.label}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600 z-50">
+                {getStatusOptions().map((option) => (
+                  <SelectItem 
+                    key={option.value} 
+                    value={option.value}
+                    className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                  >
+                    <span className={getStatusColor(option.value)}>
+                      {option.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <Label htmlFor="date" className="text-white">Data</Label>
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
@@ -155,7 +221,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
                   {formData.date ? format(formData.date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecionar data</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start" side="bottom">
+              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600 z-50" align="start" side="bottom">
                 <Calendar
                   mode="single"
                   selected={tempDate}

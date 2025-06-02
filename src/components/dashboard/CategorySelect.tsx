@@ -97,10 +97,12 @@ const CategorySelect: React.FC<CategorySelectProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-full p-0 bg-gray-800 border-gray-600" 
+        className="w-[--radix-popover-trigger-width] p-0 bg-gray-800 border-gray-600 z-50" 
         align="start"
         side="bottom"
         sideOffset={4}
+        avoidCollisions={true}
+        collisionPadding={8}
       >
         <Command className="bg-gray-800">
           <CommandInput 

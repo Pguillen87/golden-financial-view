@@ -18,6 +18,7 @@ interface FinanceiroEntrada {
   data: string;
   categoria_id: number;
   descricao: string;
+  status: string;
 }
 
 interface FinanceiroSaida {
@@ -26,6 +27,7 @@ interface FinanceiroSaida {
   data: string;
   categoria_id: number;
   descricao: string;
+  status: string;
 }
 
 const Dashboard = () => {
@@ -125,8 +127,12 @@ const Dashboard = () => {
     });
   };
 
-  const totalEntradas = entradas.reduce((total, entrada) => total + Number(entrada.valor), 0);
-  const totalSaidas = saidas.reduce((total, saida) => total + Number(saida.valor), 0);
+  // Calcular totais apenas de transações efetivadas
+  const effectiveEntradas = entradas.filter(entrada => entrada.status === 'recebida');
+  const effectiveSaidas = saidas.filter(saida => saida.status === 'pago');
+  
+  const totalEntradas = effectiveEntradas.reduce((total, entrada) => total + Number(entrada.valor), 0);
+  const totalSaidas = effectiveSaidas.reduce((total, saida) => total + Number(saida.valor), 0);
   const saldo = totalEntradas - totalSaidas;
 
   const months = [
@@ -142,7 +148,7 @@ const Dashboard = () => {
     }
   ];
 
-  const saidasPorCategoria = saidas.reduce((acc, saida) => {
+  const saidasPorCategoria = effectiveSaidas.reduce((acc, saida) => {
     const categoria = `Categoria ${saida.categoria_id}`;
     acc[categoria] = (acc[categoria] || 0) + Number(saida.valor);
     return acc;

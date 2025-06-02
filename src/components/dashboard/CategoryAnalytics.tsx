@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import FinancialChart from '@/components/charts/FinancialChart';
-import ChartLegendToggle from './ChartLegendToggle';
 
 interface CategoryAnalyticsProps {
   selectedMonth?: number;
@@ -20,8 +19,6 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
   const [incomeData, setIncomeData] = useState<any[]>([]);
   const [expenseData, setExpenseData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showIncomeLegend, setShowIncomeLegend] = useState(true);
-  const [showExpenseLegend, setShowExpenseLegend] = useState(true);
 
   useEffect(() => {
     if (cliente) {
@@ -57,7 +54,7 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
 
       console.log('Buscando dados de categorias do período:', startDate, 'até', endDate);
 
-      // Buscar dados de entrada com join nas categorias
+      // Buscar dados de entrada com join nas categorias (apenas efetivadas)
       const { data: incomeResults, error: incomeError } = await supabase
         .from('financeiro_entradas')
         .select(`
@@ -65,10 +62,11 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
           financeiro_categorias_entrada!inner(nome, cor)
         `)
         .eq('cliente_id', cliente.id)
+        .eq('status', 'recebida')
         .gte('data', startDate)
         .lt('data', endDate);
 
-      // Buscar dados de saída com join nas categorias
+      // Buscar dados de saída com join nas categorias (apenas efetivadas)
       const { data: expenseResults, error: expenseError } = await supabase
         .from('financeiro_saidas')
         .select(`
@@ -76,6 +74,7 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
           financeiro_categorias_saida!inner(nome, cor)
         `)
         .eq('cliente_id', cliente.id)
+        .eq('status', 'pago')
         .gte('data', startDate)
         .lt('data', endDate);
 
@@ -149,57 +148,45 @@ const CategoryAnalytics: React.FC<CategoryAnalyticsProps> = ({
           Análise por Categorias
         </h2>
         <p className="text-gray-400 text-sm mb-6">
-          Distribuição de suas receitas e despesas por categoria.
+          Distribuição de suas receitas e despesas por categoria (apenas efetivadas).
         </p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Gráfico de Receitas */}
-        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm relative">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-green-400">
-              Receitas por Categoria
-            </h3>
-            <ChartLegendToggle 
-              showLegend={showIncomeLegend}
-              onToggle={() => setShowIncomeLegend(!showIncomeLegend)}
-            />
-          </div>
+        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm">
+          <h3 className="text-lg font-semibold text-green-400 mb-4">
+            Receitas por Categoria
+          </h3>
           
           {incomeData.length > 0 ? (
             <FinancialChart
               pieData={incomeData}
               type="pie"
-              showLegend={showIncomeLegend}
+              showLegend={true}
             />
           ) : (
             <div className="flex items-center justify-center h-64 text-gray-400">
-              Nenhuma receita encontrada no período
+              Nenhuma receita efetivada encontrada no período
             </div>
           )}
         </div>
 
         {/* Gráfico de Despesas */}
-        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm relative">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-red-400">
-              Despesas por Categoria
-            </h3>
-            <ChartLegendToggle 
-              showLegend={showExpenseLegend}
-              onToggle={() => setShowExpenseLegend(!showExpenseLegend)}
-            />
-          </div>
+        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/30 backdrop-blur-sm">
+          <h3 className="text-lg font-semibold text-red-400 mb-4">
+            Despesas por Categoria
+          </h3>
           
           {expenseData.length > 0 ? (
             <FinancialChart
               pieData={expenseData}
               type="pie"
-              showLegend={showExpenseLegend}
+              showLegend={true}
             />
           ) : (
             <div className="flex items-center justify-center h-64 text-gray-400">
-              Nenhuma despesa encontrada no período
+              Nenhuma despesa efetivada encontrada no período
             </div>
           )}
         </div>

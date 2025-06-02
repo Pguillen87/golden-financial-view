@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Plus, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { Edit, Trash2, Plus, TrendingUp, TrendingDown, Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,7 @@ interface Transaction {
   type: 'income' | 'expense';
   category: string;
   categoria_id?: number;
+  status: string;
 }
 
 interface TransactionsManagerProps {
@@ -133,7 +135,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         date: item.data,
         type: 'income' as const,
         category: item.financeiro_categorias_entrada?.nome || 'Sem categoria',
-        categoria_id: item.categoria_id
+        categoria_id: item.categoria_id,
+        status: item.status || 'recebida'
       }));
 
       const expenseTransactions = (expenseData || []).map(item => ({
@@ -143,7 +146,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         date: item.data,
         type: 'expense' as const,
         category: item.financeiro_categorias_saida?.nome || 'Sem categoria',
-        categoria_id: item.categoria_id
+        categoria_id: item.categoria_id,
+        status: item.status || 'pago'
       }));
 
       const allTransactions = [...incomeTransactions, ...expenseTransactions]
@@ -173,8 +177,83 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'recebida':
+      case 'pago':
+        return <CheckCircle className="h-3 w-3 text-green-400" />;
+      case 'a_receber':
+      case 'a_vencer':
+        return <Clock className="h-3 w-3 text-yellow-400" />;
+      case 'vencida':
+      case 'vencido':
+        return <XCircle className="h-3 w-3 text-red-400" />;
+      default:
+        return <Clock className="h-3 w-3 text-gray-400" />;
+    }
+  };
+
+  const getStatusText = (status: string, type: 'income' | 'expense') => {
+    if (type === 'income') {
+      switch (status) {
+        case 'recebida':
+          return 'Recebida';
+        case 'a_receber':
+          return 'A Receber';
+        case 'vencida':
+          return 'Vencida';
+        default:
+          return 'Recebida';
+      }
+    } else {
+      switch (status) {
+        case 'pago':
+          return 'Pago';
+        case 'a_vencer':
+          return 'A Vencer';
+        case 'vencido':
+          return 'Vencido';
+        default:
+          return 'Pago';
+      }
+    }
+  };
+
+  const handleStatusChange = async (transactionId: number, newStatus: string, type: 'income' | 'expense') => {
+    try {
+      const table = type === 'income' ? 'financeiro_entradas' : 'financeiro_saidas';
+      const { error } = await supabase
+        .from(table)
+        .update({ status: newStatus })
+        .eq('id', transactionId);
+
+      if (error) throw error;
+
+      // Atualizar estado local
+      setTransactions(prev => prev.map(t => 
+        t.id === transactionId ? { ...t, status: newStatus } : t
+      ));
+
+      toast({
+        title: "Sucesso",
+        description: "Status atualizado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const incomeTransactions = transactions.filter(t => t.type === 'income');
   const expenseTransactions = transactions.filter(t => t.type === 'expense');
+
+  // Calcular totais apenas de transações efetivadas
+  const effectiveIncomeTransactions = incomeTransactions.filter(t => t.status === 'recebida');
+  const effectiveExpenseTransactions = expenseTransactions.filter(t => t.status === 'pago');
 
   const handleAddTransaction = (type: 'income' | 'expense') => {
     setDialogType(type);
@@ -235,7 +314,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
             descricao: transactionData.description,
             valor: transactionData.amount,
             data: transactionData.date,
-            categoria_id: transactionData.category_id
+            categoria_id: transactionData.category_id,
+            status: transactionData.status
           })
           .eq('id', editingTransaction.id);
 
@@ -250,7 +330,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
             descricao: transactionData.description,
             valor: transactionData.amount,
             data: transactionData.date,
-            categoria_id: transactionData.category_id
+            categoria_id: transactionData.category_id,
+            status: transactionData.status
           });
 
         if (error) throw error;
@@ -327,10 +408,27 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
                 </div>
                 <span>•</span>
                 <span>{transaction.category}</span>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  {getStatusIcon(transaction.status)}
+                  <span>{getStatusText(transaction.status, type)}</span>
+                </div>
               </div>
             </div>
             
             <div className="flex items-center gap-1 ml-3">
+              {/* Quick status change buttons */}
+              {transaction.status !== (type === 'income' ? 'recebida' : 'pago') && (
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => handleStatusChange(transaction.id, type === 'income' ? 'recebida' : 'pago', type)}
+                  className="text-green-400 hover:text-green-300 p-1 h-6 w-6"
+                  title={`Marcar como ${type === 'income' ? 'recebida' : 'pago'}`}
+                >
+                  <CheckCircle className="h-3 w-3" />
+                </Button>
+              )}
               <Button 
                 size="sm" 
                 variant="ghost" 
@@ -386,30 +484,30 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
 
       {/* Resumo */}
       <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-        <h4 className="text-md font-semibold text-[#FFD700] mb-3">Resumo do Período</h4>
+        <h4 className="text-md font-semibold text-[#FFD700] mb-3">Resumo do Período (Apenas Efetivadas)</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="text-center p-3 bg-gray-800 rounded-lg">
             <p className="text-xs text-gray-400 mb-1">Total de Receitas</p>
             <p className="text-lg font-bold text-green-400">
-              {formatCurrency(incomeTransactions.reduce((sum, t) => sum + t.amount, 0))}
+              {formatCurrency(effectiveIncomeTransactions.reduce((sum, t) => sum + t.amount, 0))}
             </p>
           </div>
           <div className="text-center p-3 bg-gray-800 rounded-lg">
             <p className="text-xs text-gray-400 mb-1">Total de Despesas</p>
             <p className="text-lg font-bold text-red-400">
-              {formatCurrency(expenseTransactions.reduce((sum, t) => sum + t.amount, 0))}
+              {formatCurrency(effectiveExpenseTransactions.reduce((sum, t) => sum + t.amount, 0))}
             </p>
           </div>
           <div className="text-center p-3 bg-gray-800 rounded-lg">
             <p className="text-xs text-gray-400 mb-1">Saldo</p>
             <p className={`text-lg font-bold ${
-              (incomeTransactions.reduce((sum, t) => sum + t.amount, 0) - 
-               expenseTransactions.reduce((sum, t) => sum + t.amount, 0)) >= 0 
+              (effectiveIncomeTransactions.reduce((sum, t) => sum + t.amount, 0) - 
+               effectiveExpenseTransactions.reduce((sum, t) => sum + t.amount, 0)) >= 0 
                 ? 'text-green-400' : 'text-red-400'
             }`}>
               {formatCurrency(
-                incomeTransactions.reduce((sum, t) => sum + t.amount, 0) - 
-                expenseTransactions.reduce((sum, t) => sum + t.amount, 0)
+                effectiveIncomeTransactions.reduce((sum, t) => sum + t.amount, 0) - 
+                effectiveExpenseTransactions.reduce((sum, t) => sum + t.amount, 0)
               )}
             </p>
           </div>
