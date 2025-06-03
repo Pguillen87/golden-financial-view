@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, Target, Receipt, LucideIcon } from 'lucide-react';
+import { BarChart3, Target, Receipt, TrendingUp, CreditCard, LucideIcon } from 'lucide-react';
 import CategoryManager from './CategoryManager';
 import GoalsManager from './GoalsManager';
 import TransactionsManager from './TransactionsManager';
+import CategoryAnalytics from './CategoryAnalytics';
+import PaymentMethodManager from './PaymentMethodManager';
 
 interface Tab {
   id: string;
@@ -32,9 +34,15 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
   selectedYear,
   dateRange
 }) => {
-  const [activeTab, setActiveTab] = useState('categorias');
+  const [activeTab, setActiveTab] = useState('analytics');
 
   const tabs: Tab[] = [
+    {
+      id: 'analytics',
+      label: 'Análise por Categorias',
+      icon: TrendingUp,
+      gradient: 'from-emerald-600 to-green-700'
+    },
     {
       id: 'categorias',
       label: 'Categorias',
@@ -52,11 +60,25 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
       label: 'Lançamentos',
       icon: Receipt,
       gradient: 'from-gray-600 to-gray-700'
+    },
+    {
+      id: 'payments',
+      label: 'Formas de Pagamento',
+      icon: CreditCard,
+      gradient: 'from-indigo-600 to-purple-700'
     }
   ];
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'analytics':
+        return (
+          <CategoryAnalytics
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            dateRange={dateRange}
+          />
+        );
       case 'categorias':
         return <CategoryManager />;
       case 'metas':
@@ -69,6 +91,8 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
             dateRange={dateRange}
           />
         );
+      case 'payments':
+        return <PaymentMethodManager />;
       default:
         return null;
     }
@@ -109,8 +133,8 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
           transition={{ duration: 0.3 }}
         >
           {/* Navigation Tabs */}
-          <div className="flex justify-center mb-6">
-            <div className="flex bg-black/30 rounded-2xl p-1 backdrop-blur-sm border border-gray-700/50">
+          <div className="flex justify-center mb-6 overflow-x-auto">
+            <div className="flex bg-black/30 rounded-2xl p-1 backdrop-blur-sm border border-gray-700/50 min-w-max">
               {tabs.map((tab) => (
                 <motion.button
                   key={tab.id}
@@ -119,8 +143,8 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
                     setActiveTab(tab.id);
                   }}
                   className={`
-                    relative py-2 px-4 text-sm font-medium rounded-xl
-                    transition-all duration-300 flex items-center gap-2
+                    relative py-2 px-3 text-xs md:text-sm font-medium rounded-xl
+                    transition-all duration-300 flex items-center gap-2 whitespace-nowrap
                     ${activeTab === tab.id 
                       ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg` 
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -132,7 +156,7 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 >
                   <tab.icon className="h-4 w-4" />
-                  {tab.label}
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </motion.button>
               ))}
             </div>

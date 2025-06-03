@@ -1,11 +1,7 @@
 
 import React from 'react';
-import NavigationCards from './NavigationCards';
-import CategoryAnalytics from './CategoryAnalytics';
-import TransactionsManager from './TransactionsManager';
-import GoalsManager from './GoalsManager';
-import CategoryManager from './CategoryManager';
-import PaymentMethodManager from './PaymentMethodManager';
+import NavigationCard from './NavigationCard';
+import { Settings } from 'lucide-react';
 
 interface NavigationSectionProps {
   selectedMonth?: number;
@@ -18,51 +14,23 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
   selectedYear,
   dateRange
 }) => {
-  const [activeSection, setActiveSection] = React.useState('analytics');
+  const [activeCard, setActiveCard] = React.useState('management');
 
-  const handleSectionChange = (section: string) => {
-    setActiveSection(section);
-  };
-
-  const renderActiveSection = () => {
-    switch (activeSection) {
-      case 'analytics':
-        return (
-          <CategoryAnalytics
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            dateRange={dateRange}
-          />
-        );
-      case 'transactions':
-        return (
-          <TransactionsManager
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            dateRange={dateRange}
-          />
-        );
-      case 'goals':
-        return <GoalsManager />;
-      case 'categories':
-        return <CategoryManager />;
-      case 'payments':
-        return <PaymentMethodManager />;
-      default:
-        return (
-          <CategoryAnalytics
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            dateRange={dateRange}
-          />
-        );
-    }
+  const handleCardClick = (cardId: string) => {
+    setActiveCard(cardId);
   };
 
   return (
     <div className="space-y-6">
-      <NavigationCards onSectionChange={handleSectionChange} />
-      {renderActiveSection()}
+      <NavigationCard
+        icon={Settings}
+        gradient="from-purple-500 to-pink-500"
+        isActive={activeCard === 'management'}
+        onClick={() => handleCardClick('management')}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        dateRange={dateRange}
+      />
     </div>
   );
 };
