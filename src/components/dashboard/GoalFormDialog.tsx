@@ -64,12 +64,13 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
 
   useEffect(() => {
     if (goal) {
+      console.log('Carregando meta para edição:', goal);
       setFormData({
         name: goal.name || '',
         targetAmount: goal.targetAmount?.toString() || '',
         currentAmount: goal.currentAmount?.toString() || '',
         deadline: goal.deadline ? new Date(goal.deadline) : new Date(),
-        category: '',
+        category: goal.category || '',
         type: 'expense'
       });
       setTempDate(goal.deadline ? new Date(goal.deadline) : new Date());
@@ -108,6 +109,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
       if (error) {
         console.error('Erro ao buscar categorias:', error);
       } else {
+        console.log('Categorias carregadas:', data);
         setCategories(data || []);
       }
     } catch (error) {
@@ -175,7 +177,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
               <SelectTrigger className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600 text-white" side="bottom" align="start">
+              <SelectContent className="bg-gray-800 border-gray-600 text-white z-50" side="bottom" align="start">
                 <SelectItem value="expense" className="text-white hover:bg-gray-700 focus:bg-gray-700">
                   Meta de Economia (Despesa)
                 </SelectItem>
@@ -211,10 +213,12 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
                 </Button>
               </PopoverTrigger>
               <PopoverContent 
-                className="w-full p-0 bg-gray-800 border-gray-600" 
+                className="w-[--radix-popover-trigger-width] p-0 bg-gray-800 border-gray-600 z-50" 
                 align="start"
                 side="bottom"
                 sideOffset={4}
+                avoidCollisions={true}
+                collisionPadding={8}
               >
                 <Command className="bg-gray-800">
                   <CommandInput 
@@ -300,7 +304,7 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
                   {formData.deadline ? format(formData.deadline, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecionar data</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start" side="bottom">
+              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600 z-50" align="start" side="bottom">
                 <Calendar
                   mode="single"
                   selected={tempDate}

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Plus, TrendingUp, TrendingDown, Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Edit, Trash2, Plus, TrendingUp, TrendingDown, Calendar, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,10 @@ interface Transaction {
   category: string;
   categoria_id?: number;
   status: string;
+  payment_method?: string;
+  receipt_date?: string;
+  current_installment?: number;
+  total_installments?: number;
 }
 
 interface TransactionsManagerProps {
@@ -90,7 +94,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         .from('financeiro_entradas')
         .select(`
           *,
-          financeiro_categorias_entrada(nome)
+          financeiro_categorias_entrada(nome),
+          financeiro_formas_pagamento(nome)
         `)
         .eq('cliente_id', cliente.id)
         .gte('data', startDate)
@@ -102,7 +107,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         .from('financeiro_saidas')
         .select(`
           *,
-          financeiro_categorias_saida(nome)
+          financeiro_categorias_saida(nome),
+          financeiro_formas_pagamento(nome)
         `)
         .eq('cliente_id', cliente.id)
         .gte('data', startDate)
@@ -136,7 +142,11 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         type: 'income' as const,
         category: item.financeiro_categorias_entrada?.nome || 'Sem categoria',
         categoria_id: item.categoria_id,
-        status: item.status || 'recebida'
+        status: item.status || 'a_receber',
+        payment_method: item.financeiro_formas_pagamento?.nome,
+        receipt_date: item.data_recebimento,
+        current_installment: item.parcela_atual,
+        total_installments: item.total_parcelas
       }));
 
       const expenseTransactions = (expenseData || []).map(item => ({
@@ -147,7 +157,11 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         type: 'expense' as const,
         category: item.financeiro_categorias_saida?.nome || 'Sem categoria',
         categoria_id: item.categoria_id,
-        status: item.status || 'pago'
+        status: item.status || 'a_vencer',
+        payment_method: item.financeiro_formas_pagamento?.nome,
+        receipt_date: item.data_pagamento,
+        current_installment: item.parcela_atual,
+        total_installments: item.total_parcelas
       }));
 
       const allTransactions = [...incomeTransactions, ...expenseTransactions]
@@ -187,7 +201,7 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         return <Clock className="h-3 w-3 text-yellow-400" />;
       case 'vencida':
       case 'vencido':
-        return <XCircle className="h-3 w-3 text-red-400" />;
+        return <AlertTriangle className="h-3 w-3 text-red-400" />;
       default:
         return <Clock className="h-3 w-3 text-gray-400" />;
     }
@@ -203,7 +217,7 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         case 'vencida':
           return 'Vencida';
         default:
-          return 'Recebida';
+          return 'A Receber';
       }
     } else {
       switch (status) {
@@ -214,7 +228,7 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         case 'vencido':
           return 'Vencido';
         default:
-          return 'Pago';
+          return 'A Vencer';
       }
     }
   };
@@ -229,10 +243,8 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
 
       if (error) throw error;
 
-      // Atualizar estado local
-      setTransactions(prev => prev.map(t => 
-        t.id === transactionId ? { ...t, status: newStatus } : t
-      ));
+      // Recarregar transações para atualizar a interface
+      await fetchTransactions();
 
       toast({
         title: "Sucesso",
@@ -262,6 +274,7 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
+    console.log('Editando transação:', transaction);
     setDialogType(transaction.type);
     setEditingTransaction(transaction);
     setIsDialogOpen(true);
@@ -285,7 +298,7 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
 
           if (error) throw error;
 
-          setTransactions(prev => prev.filter(t => t.id !== id));
+          await fetchTransactions();
           toast({
             title: "Sucesso",
             description: "Lançamento excluído com sucesso.",
@@ -308,31 +321,59 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
       if (editingTransaction) {
         // Editar transação existente
         const table = editingTransaction.type === 'income' ? 'financeiro_entradas' : 'financeiro_saidas';
+        const updateData: any = {
+          descricao: transactionData.description,
+          valor: transactionData.amount,
+          data: transactionData.date,
+          categoria_id: transactionData.category_id,
+          forma_pagamento_id: transactionData.payment_method_id,
+          status: transactionData.status,
+          observacoes: transactionData.observations,
+          parcela_atual: transactionData.current_installment,
+          total_parcelas: transactionData.total_installments
+        };
+
+        if (transactionData.receipt_date) {
+          if (editingTransaction.type === 'income') {
+            updateData.data_recebimento = transactionData.receipt_date;
+          } else {
+            updateData.data_pagamento = transactionData.receipt_date;
+          }
+        }
+
         const { error } = await supabase
           .from(table)
-          .update({
-            descricao: transactionData.description,
-            valor: transactionData.amount,
-            data: transactionData.date,
-            categoria_id: transactionData.category_id,
-            status: transactionData.status
-          })
+          .update(updateData)
           .eq('id', editingTransaction.id);
 
         if (error) throw error;
       } else {
         // Adicionar nova transação
         const table = dialogType === 'income' ? 'financeiro_entradas' : 'financeiro_saidas';
+        const insertData: any = {
+          cliente_id: cliente?.id,
+          descricao: transactionData.description,
+          valor: transactionData.amount,
+          data: transactionData.date,
+          categoria_id: transactionData.category_id,
+          forma_pagamento_id: transactionData.payment_method_id,
+          status: transactionData.status,
+          observacoes: transactionData.observations,
+          parcela_atual: transactionData.current_installment,
+          total_parcelas: transactionData.total_installments
+        };
+
+        if (transactionData.receipt_date) {
+          if (dialogType === 'income') {
+            insertData.data_recebimento = transactionData.receipt_date;
+          } else {
+            insertData.data_pagamento = transactionData.receipt_date;
+          }
+        }
+
         const { error } = await supabase
           .from(table)
-          .insert({
-            cliente_id: cliente?.id,
-            descricao: transactionData.description,
-            valor: transactionData.amount,
-            data: transactionData.date,
-            categoria_id: transactionData.category_id,
-            status: transactionData.status
-          });
+          .insert(insertData);
 
         if (error) throw error;
       }
@@ -408,11 +449,23 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
                 </div>
                 <span>•</span>
                 <span>{transaction.category}</span>
+                {transaction.payment_method && (
+                  <>
+                    <span>•</span>
+                    <span>{transaction.payment_method}</span>
+                  </>
+                )}
                 <span>•</span>
                 <div className="flex items-center gap-1">
                   {getStatusIcon(transaction.status)}
                   <span>{getStatusText(transaction.status, type)}</span>
                 </div>
+                {transaction.total_installments && transaction.total_installments > 1 && (
+                  <>
+                    <span>•</span>
+                    <span>{transaction.current_installment}/{transaction.total_installments}</span>
+                  </>
+                )}
               </div>
             </div>
             
