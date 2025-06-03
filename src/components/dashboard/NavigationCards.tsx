@@ -64,8 +64,6 @@ const NavigationCards: React.FC<NavigationCardsProps> = ({ onSectionChange }) =>
       {cards.map((card) => (
         <NavigationCard
           key={card.id}
-          title={card.title}
-          description={card.description}
           icon={card.icon}
           gradient={card.gradient}
           isActive={activeCard === card.id}
