@@ -540,83 +540,97 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
         />
       </div>
 
-      {/* Resumo Detalhado */}
-      <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-        <h4 className="text-md font-semibold text-[#FFD700] mb-3">Resumo Detalhado do Período</h4>
+      {/* Resumo Financeiro Simplificado */}
+      <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
+        <h4 className="text-lg font-semibold text-[#FFD700] mb-6 text-center">Resumo Financeiro do Período</h4>
         
-        {/* Resumo de Receitas */}
-        <div className="mb-4">
-          <h5 className="text-sm font-semibold text-green-400 mb-2">Receitas</h5>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="text-center p-3 bg-gray-800 rounded-lg">
-              <p className="text-xs text-gray-400 mb-1">Recebidas</p>
-              <p className="text-lg font-bold text-green-400">
-                {formatCurrency(receivedTransactions.reduce((sum, t) => sum + t.amount, 0))}
-              </p>
-              <p className="text-xs text-gray-500">({receivedTransactions.length} itens)</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Receitas */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-5 w-5 text-green-400" />
+              <h5 className="text-lg font-semibold text-green-400">Receitas</h5>
             </div>
-            <div className="text-center p-3 bg-gray-800 rounded-lg">
-              <p className="text-xs text-gray-400 mb-1">A Receber</p>
-              <p className="text-lg font-bold text-yellow-400">
-                {formatCurrency(toReceiveTransactions.reduce((sum, t) => sum + t.amount, 0))}
-              </p>
-              <p className="text-xs text-gray-500">({toReceiveTransactions.length} itens)</p>
-            </div>
-            <div className="text-center p-3 bg-gray-800 rounded-lg">
-              <p className="text-xs text-gray-400 mb-1">Vencidas</p>
-              <p className="text-lg font-bold text-red-400">
-                {formatCurrency(overdueIncomeTransactions.reduce((sum, t) => sum + t.amount, 0))}
-              </p>
-              <p className="text-xs text-gray-500">({overdueIncomeTransactions.length} itens)</p>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                <span className="text-gray-300">Recebidas</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-green-400">
+                    {formatCurrency(receivedTransactions.reduce((sum, t) => sum + t.amount, 0))}
+                  </div>
+                  <div className="text-xs text-gray-500">{receivedTransactions.length} lançamentos</div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                <span className="text-gray-300">A Receber</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-yellow-400">
+                    {formatCurrency(toReceiveTransactions.reduce((sum, t) => sum + t.amount, 0))}
+                  </div>
+                  <div className="text-xs text-gray-500">{toReceiveTransactions.length} lançamentos</div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                <span className="text-gray-300">Vencidas</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-red-400">
+                    {formatCurrency(overdueIncomeTransactions.reduce((sum, t) => sum + t.amount, 0))}
+                  </div>
+                  <div className="text-xs text-gray-500">{overdueIncomeTransactions.length} lançamentos</div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Resumo de Despesas */}
-        <div className="mb-4">
-          <h5 className="text-sm font-semibold text-red-400 mb-2">Despesas</h5>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="text-center p-3 bg-gray-800 rounded-lg">
-              <p className="text-xs text-gray-400 mb-1">Pagas</p>
-              <p className="text-lg font-bold text-green-400">
-                {formatCurrency(paidTransactions.reduce((sum, t) => sum + t.amount, 0))}
-              </p>
-              <p className="text-xs text-gray-500">({paidTransactions.length} itens)</p>
+          {/* Despesas */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingDown className="h-5 w-5 text-red-400" />
+              <h5 className="text-lg font-semibold text-red-400">Despesas</h5>
             </div>
-            <div className="text-center p-3 bg-gray-800 rounded-lg">
-              <p className="text-xs text-gray-400 mb-1">A Vencer</p>
-              <p className="text-lg font-bold text-yellow-400">
-                {formatCurrency(toDueTransactions.reduce((sum, t) => sum + t.amount, 0))}
-              </p>
-              <p className="text-xs text-gray-500">({toDueTransactions.length} itens)</p>
-            </div>
-            <div className="text-center p-3 bg-gray-800 rounded-lg">
-              <p className="text-xs text-gray-400 mb-1">Vencidas</p>
-              <p className="text-lg font-bold text-red-400">
-                {formatCurrency(overdueExpenseTransactions.reduce((sum, t) => sum + t.amount, 0))}
-              </p>
-              <p className="text-xs text-gray-500">({overdueExpenseTransactions.length} itens)</p>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                <span className="text-gray-300">Pagas</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-green-400">
+                    {formatCurrency(paidTransactions.reduce((sum, t) => sum + t.amount, 0))}
+                  </div>
+                  <div className="text-xs text-gray-500">{paidTransactions.length} lançamentos</div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                <span className="text-gray-300">A Vencer</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-yellow-400">
+                    {formatCurrency(toDueTransactions.reduce((sum, t) => sum + t.amount, 0))}
+                  </div>
+                  <div className="text-xs text-gray-500">{toDueTransactions.length} lançamentos</div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                <span className="text-gray-300">Vencidas</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-red-400">
+                    {formatCurrency(overdueExpenseTransactions.reduce((sum, t) => sum + t.amount, 0))}
+                  </div>
+                  <div className="text-xs text-gray-500">{overdueExpenseTransactions.length} lançamentos</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Saldo Final */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-gray-600">
-          <div className="text-center p-3 bg-gray-800 rounded-lg">
-            <p className="text-xs text-gray-400 mb-1">Total de Receitas Efetivadas</p>
-            <p className="text-lg font-bold text-green-400">
-              {formatCurrency(receivedTransactions.reduce((sum, t) => sum + t.amount, 0))}
-            </p>
-          </div>
-          <div className="text-center p-3 bg-gray-800 rounded-lg">
-            <p className="text-xs text-gray-400 mb-1">Total de Despesas Efetivadas</p>
-            <p className="text-lg font-bold text-red-400">
-              {formatCurrency(paidTransactions.reduce((sum, t) => sum + t.amount, 0))}
-            </p>
-          </div>
-          <div className="text-center p-3 bg-gray-800 rounded-lg">
-            <p className="text-xs text-gray-400 mb-1">Saldo Final</p>
-            <p className={`text-lg font-bold ${
+        <div className="mt-8 pt-6 border-t border-gray-600">
+          <div className="bg-gray-800 rounded-lg p-6 text-center">
+            <h6 className="text-gray-400 text-sm mb-2">Saldo Final (Recebidas - Pagas)</h6>
+            <div className={`text-3xl font-bold ${
               (receivedTransactions.reduce((sum, t) => sum + t.amount, 0) - 
                paidTransactions.reduce((sum, t) => sum + t.amount, 0)) >= 0 
                 ? 'text-green-400' : 'text-red-400'
@@ -625,7 +639,7 @@ const TransactionsManager: React.FC<TransactionsManagerProps> = ({
                 receivedTransactions.reduce((sum, t) => sum + t.amount, 0) - 
                 paidTransactions.reduce((sum, t) => sum + t.amount, 0)
               )}
-            </p>
+            </div>
           </div>
         </div>
       </div>
