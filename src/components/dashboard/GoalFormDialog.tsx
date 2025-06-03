@@ -10,9 +10,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import CategorySelectImproved from './CategorySelectImproved';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Calendar } from 'lucide-react';
 import { Goal } from '@/types/goal';
+
+interface Category {
+  id: number;
+  name: string;
+  color: string;
+}
 
 interface GoalFormDialogProps {
   isOpen: boolean;
@@ -27,6 +34,8 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
   onSave,
   goal
 }) => {
+  const { cliente } = useAuth();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     targetAmount: '',
@@ -58,6 +67,40 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
     }
   }, [goal, isOpen]);
 
+  useEffect(() => {
+    if (cliente && isOpen) {
+      fetchCategories();
+    }
+  }, [cliente, formData.type, isOpen]);
+
+  const fetchCategories = async () => {
+    if (!cliente) return;
+
+    try {
+      const table = formData.type === 'income' ? 'financeiro_categorias_entrada' : 'financeiro_categorias_saida';
+      
+      const { data, error } = await supabase
+        .from(table)
+        .select('id, nome, cor')
+        .eq('cliente_id', cliente.id)
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) {
+        console.error('Erro ao buscar categorias:', error);
+      } else {
+        const mappedCategories = data?.map(cat => ({
+          id: cat.id,
+          name: cat.nome,
+          color: cat.cor || (formData.type === 'income' ? '#22c55e' : '#ef4444')
+        })) || [];
+        setCategories(mappedCategories);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name.trim() && formData.targetAmount && formData.deadline && formData.category) {
@@ -72,6 +115,8 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  const selectedCategory = categories.find(cat => cat.id.toString() === formData.category);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -97,7 +142,10 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
 
           <div>
             <Label className="text-white">Tipo de Meta</Label>
-            <Select value={formData.type} onValueChange={(value) => handleChange('type', value)}>
+            <Select value={formData.type} onValueChange={(value) => {
+              handleChange('type', value);
+              handleChange('category', ''); // Reset category when type changes
+            }}>
               <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                 <SelectValue />
               </SelectTrigger>
@@ -114,12 +162,42 @@ const GoalFormDialog: React.FC<GoalFormDialogProps> = ({
 
           <div>
             <Label className="text-white">Categoria</Label>
-            <CategorySelectImproved
-              type={formData.type}
-              value={formData.category}
-              onChange={(value) => handleChange('category', value)}
-              placeholder={`Selecione uma categoria de ${formData.type === 'income' ? 'receita' : 'despesa'}`}
-            />
+            <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
+              <SelectTrigger className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 focus:bg-gray-700 focus:border-gray-500">
+                <SelectValue>
+                  {selectedCategory ? (
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: selectedCategory.color }}
+                      />
+                      {selectedCategory.name}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">
+                      {`Selecione uma categoria de ${formData.type === 'income' ? 'receita' : 'despesa'}`}
+                    </span>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600 z-50">
+                {categories.map((category) => (
+                  <SelectItem 
+                    key={category.id} 
+                    value={category.id.toString()} 
+                    className="text-white hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: category.color }}
+                      />
+                      {category.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
