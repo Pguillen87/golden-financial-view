@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import CategorySelect from './CategorySelect';
-import PaymentMethodSelect from './PaymentMethodSelect';
+import CategorySelectImproved from './CategorySelectImproved';
+import PaymentMethodSelectImproved from './PaymentMethodSelectImproved';
 import { Calendar, Info } from 'lucide-react';
 
 interface TransactionFormDialogProps {
@@ -177,7 +177,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
 
             <div>
               <Label className="text-white">Categoria</Label>
-              <CategorySelect
+              <CategorySelectImproved
                 type={type}
                 value={formData.category_id}
                 onChange={(value) => handleChange('category_id', value)}
@@ -187,7 +187,7 @@ const TransactionFormDialog: React.FC<TransactionFormDialogProps> = ({
 
             <div>
               <Label className="text-white">Forma de Pagamento</Label>
-              <PaymentMethodSelect
+              <PaymentMethodSelectImproved
                 value={formData.payment_method_id}
                 onChange={(value) => handleChange('payment_method_id', value)}
                 placeholder="Selecione uma forma de pagamento"
